@@ -102,15 +102,47 @@ def square_hinge_loss(actual,pred):
 #TODO test, add stopping criterion based on convergence, not just max iters
 def matrix_factor_ALS(matrix, dim, num_iters):
   #initialization of two factors: small random (between -1 and 1)
-  factor1 = 2*np.random.random((matrix.shape[0], dim)) - 1
-  factor2 = 2*np.random.random((matrix.shape[0], dim)) - 1
+  #matrix.dtype = "float64" #TODO is this necessary
+  #factor1 = rand(matrix.shape[0], dim, density=1, format="csr")
+  #factor2 = rand(matrix.shape[0], dim, density=1, format="csr")
+  factor1 = np.random.random((matrix.shape[0], dim))
+  #factor2 = np.random.random((matrix.shape[0], dim))
+  factor2 = np.random.random((dim, matrix.shape[0]))
+  #mat = np.asarray(matrix.todense())
+  #print mat
+  #print type(mat)
+  #print np.isnan(np.min(mat))
   for iteration in range(num_iters):
     #solve 2 least squares problems
     #one fixing the second factor and solving for the first
     #then fix first factor and solve for the second
-    factor1 = lstsq(factor2, matrix)
-    factor2 = lstsq(factor1, matrix)
-  return factor1, factor2
+    '''
+    print factor1.shape, factor2.shape, matrix.shape
+    print type(factor1), factor1.dtype
+    print type(factor2), factor2.dtype
+    print type(matrix), matrix.dtype
+    a1,b1 = map(np.asarray, (factor2.A,matrix.A))
+    #a1 = np.asarray(factor2.A)
+    #b1 = np.asarray(matrix.A)
+    print type(a1), type(b1)
+    print a1.shape, b1.shape
+    print len(a1.shape), len(b1.shape)
+    '''
+    factor1 = lstsq(factor2.transpose(), matrix.A)[0]
+    #print factor1
+    print "solved for factor 1"
+    print factor1.shape, factor2.shape, matrix.shape
+    factor2 = lstsq(factor1.transpose(), matrix.A)[0]
+    print "solved for factor 2"
+    '''
+    print factor2.shape, mat.shape
+    print mat[:10,:10]
+    factor1 = np.linalg.lstsq(factor2[0], mat)
+    print "solved for factor 1"
+    factor2 = np.linalg.lstsq(factor1, mat)
+    print "solved for factor 2"
+    '''
+  return csr_matrix(factor1), csr_matrix(factor2)
 
 
 if __name__ == "__main__":

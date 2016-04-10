@@ -54,14 +54,18 @@ def kfold_CV_pipeline(adj_matrix, num_folds=10):
     max_iters = 5
     regularization_param = 1
     dim = 20
-
+    '''
     factor1, factor2 = mf.matrix_factor_SGD(train_matrix, learning_rate, 
                                           loss_type, tol, max_iters, 
                                           regularization_param, dim)
-    print factor1.shape, factor2.shape
-    print factor1
-    train_complet = csr_matrix.sign(csr_matrix(factor1*factor2.transpose() ))
-    print train_complet
+    '''
+    factor1, factor2 = mf.matrix_factor_ALS(train_matrix, dim, max_iters)
+    #print factor1.shape, factor2.shape
+    #print factor1
+    #train_complet = csr_matrix.sign(csr_matrix(factor1*factor2.transpose() ))
+    train_complet = csr_matrix.sign(csr_matrix(factor1.transpose()*factor2))
+    #print train_complet
+    print train_complet.shape
 
     preds = train_complet[test_row_indices, test_col_indices]
 
