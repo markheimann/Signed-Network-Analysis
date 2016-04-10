@@ -58,14 +58,17 @@ def extract_edge_features(adj_matrix, max_cycle_order, network_name):
       #print adj_pos_component.todense()[:10,:10]
 
       #For easy indexing of which component we want to work with
-      components = (adj_pos_component, adj_neg_component)#,
-                    #adj_pos_component.transpose(), adj_neg_component.transpose())
+      #NOTE: we are considering only undirected graphs so transpose is the same 
+      #(unlike Appendix B of the paper which describes feature computation for directed graphs)
+      components = (adj_pos_component, adj_neg_component)
+
+      #WRITETEST make sure positive and negative components are symmetric?
       print "adj matrix pos component is symmetric?", (adj_pos_component != adj_pos_component.transpose()).nnz == 0
       print "adj matrix neg component is symmetric?", (adj_neg_component != adj_neg_component.transpose()).nnz == 0
-      #NOTE: we are considering only undirected graphs so transpose is the same
 
       #perform matrix multiplications to compute features
       #features will be the (i,j)-th entry of each product
+
       feature_products = compute_feature_products(components, max_cycle_order)
 
       #save computation results so don't have to do them again
@@ -74,8 +77,10 @@ def extract_edge_features(adj_matrix, max_cycle_order, network_name):
     print "Extracting features from feature matrices..."
     feature_dict = dict()
     labels_dict = dict()
+
     #indices of rows and columns to get features for
     edge_row_indices, edge_col_indices = adj_matrix.nonzero()
+
     #(i,j) and (j,i) have same features--model only considers symmetric relationships
     #only get features for (i,j)
     unique_edges = set()
@@ -105,10 +110,8 @@ def compute_feature_products(components, max_cycle_order, products = None):
     return products
 
   #recursively grow set of instructions
-  #print "products: ", products[max_length]
   new_products = list()
   for product in products[max_length]:
-    #print "product: ", product
     for new_product_term in components:
       new_product = csr_matrix(product) #shallow copy of product
       new_product = new_product.dot(new_product_term) #multiply by another component
@@ -134,5 +137,7 @@ if __name__ == "__main__":
   matrix4 = csr_matrix(np.asarray([[3,2],[8,-1]]))
   components = [matrix1, matrix2, matrix3, matrix4]
   products = compute_feature_products(components,3)
+
+  #WRITETEST
   for length in products.keys():
     print np.array_equal(products[length][0].todense(), (matrix1 ** length).todense())
