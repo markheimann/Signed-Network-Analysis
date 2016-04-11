@@ -43,11 +43,12 @@ class test_hoc(unittest.TestCase):
     for length in products.keys():
       assert np.array_equal(products[length][0].todense(), (matrix1 ** length).todense())
 
+  #tests with more subjective criteria to see what HOC classifier actually learns
   def test_hoc_learning(self):
     data_file_name = "Preprocessed Data/small_network.npy"
     adj_matrix = np.load(data_file_name).item()
-    max_cycle_order = 3
-    network_name = "small_network"
+    max_cycle_order = 4
+    network_name = "small"
 
     #should just predict mode label of 1 because features are random noise
     #so only positives and some are false
@@ -58,8 +59,8 @@ class test_hoc(unittest.TestCase):
     #should mostly predict mode label of 1 because few features to learn from
     #so high rate of false positives
     avg_acc, avg_fpr = hoc_prediction.hoc_learning_pipeline(adj_matrix, 
-                       network_name, max_cycle_order, num_folds = 5, num_features = 3)
-    assert avg_fpr >= 0.8
+                       network_name, max_cycle_order, num_folds = 5, num_features = 1)
+    assert avg_fpr >= 0.7
 
 
 class test_ml_pipeline(unittest.TestCase):

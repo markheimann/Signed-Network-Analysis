@@ -64,8 +64,8 @@ def hoc_learning_pipeline(adj_matrix, dataset_name, max_cycle_order, num_folds=1
 
   #TODO: without this line classifier learns perfectly (not supposed to happen)
   #(figure out why)
-  for key in features_dict.keys():
-    random.shuffle(features_dict[key])
+  #for key in features_dict.keys():
+  #  random.shuffle(features_dict[key])
 
   #completely randomize the features
   #NOTE: with this test, classifier should just predict mode label
@@ -76,9 +76,14 @@ def hoc_learning_pipeline(adj_matrix, dataset_name, max_cycle_order, num_folds=1
   #choose only a subset of the features to learn from
   #note: fewer features (e.g. 4) --> classifier always predicts mode label
   if num_features > 0:
+    some_key = features_dict.keys()[0] #pick any key--all will have same number of features
+    shuffle_indices = range(len(features_dict[some_key])) #indices up to length of features list
+    random.shuffle(shuffle_indices) #shuffle indices in random order
     for key in features_dict.keys():
-      random.shuffle(features_dict[key])
-      features_dict[key] = features_dict[key][:num_features] #choose a subset of features at random
+      original_features = features_dict[key]
+      #shuffle original features according to the shuffled indices above
+      #then choose the first num_features of them for learning
+      features_dict[key] = [original_features[index] for index in shuffle_indices][:num_features]
 
   #Split into folds
   data_folds = pipeline.kfold_CV_split(features_dict.keys(), num_folds)
@@ -88,19 +93,19 @@ def hoc_learning_pipeline(adj_matrix, dataset_name, max_cycle_order, num_folds=1
   return avg_accuracy, avg_false_positive_rate
 
 if __name__ == "__main__":
-  #data_file_name = "Preprocessed Data/wiki_elections_csr.npy"
-  #dataset_name = "wikipedia"
+  data_file_name = "Preprocessed Data/wiki_elections_csr.npy"
+  dataset_name = "wikipedia"
   #data_file_name = "Preprocessed Data/Slashdot090221_csr.npy"
   #dataset_name = "slashdot"
   #data_file_name = "Preprocessed Data/epinions_csr.npy"
   #dataset_name = "epinions"
-  data_file_name = "Preprocessed Data/small_network.npy"
-  dataset_name = "small"
+  #data_file_name = "Preprocessed Data/small_network.npy"
+  #dataset_name = "small"
 
   if not os.path.exists(data_file_name):
     raise ValueError("invalid path for data file")
   adj_matrix = np.load(data_file_name).item()
-  max_cycle_order = 2 #TODO is this equivalent to l=5 or l=6 in their work?
+  max_cycle_order = 3 
 
   num_folds = 10
   avg_accuracy, avg_false_positive_rate = hoc_learning_pipeline(adj_matrix, dataset_name, max_cycle_order, num_folds)

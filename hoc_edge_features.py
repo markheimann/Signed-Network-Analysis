@@ -17,7 +17,9 @@ import os
 # Mode: can run normally or in test mode (used for unit tests)
 #Output: List of features for each edge
 def extract_edge_features(adj_matrix, network_name, max_cycle_order, mode="normal"):
-  FEATURES_FNAME = "features_" + network_name + str(max_cycle_order) + ".npy"
+  if max_cycle_order < 3: #cycles must be at least length 3
+    raise ValueError("Cycles must have length at least 3")
+  FEATURES_FNAME = "hoc_features/features/features_" + network_name + str(max_cycle_order) + ".npy"
 
   #if we've already computed the features
   if os.path.exists(FEATURES_FNAME): 
@@ -27,7 +29,7 @@ def extract_edge_features(adj_matrix, network_name, max_cycle_order, mode="norma
     feature_dict, labels_dict = cPickle.load(open(FEATURES_FNAME, "r"))
 
   else: #compute features for the first time and save results
-    FEATURE_PRODUCTS_FNAME = "feature_matrices_" + network_name + str(max_cycle_order) + ".npy"
+    FEATURE_PRODUCTS_FNAME = "hoc_features/feature_matrices/feature_matrices_" + network_name + str(max_cycle_order) + ".npy"
     #already computed matrix products from which features will be extracted
     if os.path.exists(FEATURE_PRODUCTS_FNAME): 
     #if False: #left in here in case we want to compute everything from scratch (e.g. to measure run time)
@@ -100,6 +102,9 @@ def extract_edge_features(adj_matrix, network_name, max_cycle_order, mode="norma
         i,j = edge
         assert (j,i) not in feature_dict or j == i #OK if edge is self loop (we know person's self opinion? :P)
 
+        #make sure we have correct number of features
+        assert len(feature_dict[edge]) == sum([2**x for x in range(2,max_cycle_order)])
+
     cPickle.dump((feature_dict, labels_dict), open(FEATURES_FNAME, "w"))
 
   return feature_dict, labels_dict
@@ -112,7 +117,8 @@ def compute_feature_products(components, max_cycle_order, products = None):
   if products is None: #first call (not recursive)
     products = {1: [component for component in components]}
   max_length = max(products.keys()) #maximum length instructions generated so far
-  if max_length >= max_cycle_order: #have achieved all instructions of desired length
+  #note: max product length is 2 for max cycle order of 3 (3-cycle info given by matrix (\pm)A^(T)*(\pm)A) )
+  if max_length >= max_cycle_order - 1: #have achieved all instructions of desired length
     return products
 
   #recursively grow set of instructions
@@ -131,6 +137,11 @@ def compute_feature_products(components, max_cycle_order, products = None):
 def extract_features_for_edge(feature_matrices, from_vertex, to_vertex):
   features = list()
   for key in feature_matrices.keys():
+    #don't count products of length 1, which includes just the original matrix itself
+    #then one of the features will be the actual label
+    if key == 1:
+      continue 
+
     for product in feature_matrices[key]:
       features.append(product[from_vertex,to_vertex])
   return features
