@@ -11,6 +11,7 @@ from scipy.linalg import norm
 # Tolerance (how close does solution need to be to stop iterating)
 # Maximum number of iterations
 # Step size: how fast to update solution
+# Mode: normal or test mode to perform additional tests
 
 #Output: signed version low rank matrix that approximately solves
 # sign prediction optimization problem
@@ -20,7 +21,8 @@ def sign_prediction_SVP(adj_matrix,
                         rank, 
                         tol, 
                         max_iter,
-                        step_size):
+                        step_size,
+                        mode = "normal"):
 
   #Initialization
   num_iters = 0
@@ -38,7 +40,11 @@ def sign_prediction_SVP(adj_matrix,
     #form low rank approximation
     solution = csr_matrix(np.dot(np.dot(left_svecs, np.diag(svals)), right_svecs))
     num_iters += 1
-  print "rank of solution before sign: ", np.linalg.matrix_rank(np.asarray(solution.todense()))
+
+  #confirm that solution (before signing, which will change things) is desired rank
+  if mode == "test":
+    assert np.linalg.matrix_rank(np.asarray(solution.todense())) == rank
+
   return csr_matrix.sign(solution) #recall we want signs (edge sign predictions)
 
 #Input: "solution" of SVP, adjacency matrix, tolerance
@@ -62,20 +68,3 @@ def projection(matrix, observed_indices):
   #fill in with projected values
   proj[observed_indices] = matrix[observed_indices] 
   return proj
-
-if __name__ == "__main__":
-  #TODO write formal test but I think this is right 
-  matrix_dim = (20,20)
-  test_matrix = csr_matrix(np.sign(2*np.random.random(matrix_dim) - 1 ))
-  rank = 5
-  tol = 1
-  max_iter = 10
-  step_size = 1
-  matrix_complet = sign_prediction_SVP(test_matrix, rank, tol,
-                                      max_iter, step_size)
-  np_sol = np.asarray(matrix_complet.todense())
-  print "rank of solution: ", np.linalg.matrix_rank(np_sol)
-  prop_recovered = float(np.sum(test_matrix == np_sol))/(matrix_dim[0]*matrix_dim[1])
-  print "proportion of recovered entries: ", prop_recovered
-
-

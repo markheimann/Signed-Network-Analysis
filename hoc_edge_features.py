@@ -69,7 +69,18 @@ def extract_edge_features(adj_matrix, network_name, max_cycle_order, mode="norma
 
       #perform matrix multiplications to compute features
       #features will be the (i,j)-th entry of each product
-      feature_products = compute_feature_products(components, max_cycle_order)
+
+      #first see if we've calculated any lower order products that
+      #if so, use these calculations instead of recomputing on the way
+      #to calculating higher-order products
+      products = None
+      for calculated_order in range(max_cycle_order, 2, -1): #go all the way down to 3, the lowest order cycle
+        PRODUCTS_FNAME = "hoc_features/feature_matrices/feature_matrices_" + network_name + str(calculated_order) + ".npy"
+        if os.path.exists(PRODUCTS_FNAME):
+          products = cPickle.load(open(PRODUCTS_FNAME,"r")) #reuse these products
+          print "reusing computed products of order ", calculated_order
+          break
+      feature_products = compute_feature_products(components, max_cycle_order, products)
 
       #save computation results so don't have to do them again
       cPickle.dump(feature_products, open(FEATURE_PRODUCTS_FNAME, "w"))
