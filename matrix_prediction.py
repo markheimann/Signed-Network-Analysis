@@ -91,7 +91,10 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
 if __name__ == "__main__":
   data_file_name = "Preprocessed Data/wiki_elections_csr.npy"
   #EXCEPTIONHANDLING makes sure this file exists
-  adj_matrix = np.load(data_file_name).item()
+  try:
+    adj_matrix = np.load(data_file_name).item()
+  except Exception as e:
+    raise ValueError("could not load adj_matrix from file: ", e)
 
   NUM_VERTICES = 100 #take a small part of dataset
   adj_matrix = csr_matrix(adj_matrix.todense()[:NUM_VERTICES,:NUM_VERTICES])
