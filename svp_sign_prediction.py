@@ -4,7 +4,9 @@
 import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import svds
+from scipy.linalg import svd
 from scipy.linalg import norm
+import logging
 
 #Input: adjacency matrix with signs as entries
 # Rank (max rank of solution before taking sign matrix)
@@ -12,6 +14,7 @@ from scipy.linalg import norm
 # Maximum number of iterations
 # Step size: how fast to update solution
 # Mode: normal or test mode to perform additional tests
+#       (only called by unit tests)
 
 #Output: signed version low rank matrix that approximately solves
 # sign prediction optimization problem
@@ -29,16 +32,30 @@ def sign_prediction_SVP(adj_matrix,
   solution = csr_matrix(np.zeros(adj_matrix.shape)) #matrix of zeros
 
   #Iterate until tolerance level or maximum # iters is reached
-  while num_iters <= max_iter and not within_tol(
-                                        solution, adj_matrix, tol):
+  while num_iters <= max_iter and not within_tol(solution, adj_matrix, tol):
     #update
     solution = solution - step_size*(projection(
                           solution, adj_matrix.nonzero()) - adj_matrix)
     #compute top <rank> SVs
-    left_svecs, svals, right_svecs = svds(solution, k = rank)
+    #print solution.A
+    solution = solution.asfptype()
+    #left_svecs, svals, right_svecs = svds(solution.A, k = rank)
+    left_svecs, svals, right_svecs = svd(solution.A)
+    '''
+    print "Left svecs:", left_svecs.shape
+    print left_svecs
+    print
+    print "svals:"
+    print svals 
+    print
+    print "Right svecs:", right_svecs.shape
+    print right_svecs
+    print
+    '''
     
     #form low rank approximation
-    solution = csr_matrix(np.dot(np.dot(left_svecs, np.diag(svals)), right_svecs))
+    #solution = csr_matrix(np.dot(np.dot(left_svecs, np.diag(svals)), right_svecs))
+    solution = csr_matrix(np.dot(np.dot(left_svecs[:,:rank], np.diag(svals[:rank])), right_svecs[:rank,:]))
     num_iters += 1
 
   #confirm that solution (before signing, which will change things) is desired rank
@@ -57,7 +74,8 @@ def within_tol(solution, adj_matrix, tol):
   try:
     return norm(diff.A, "fro") < tol #.A gets nonzero entries of sparse matrix
   except ValueError:
-    print("%d NaNs in solution" % np.any(np.isnan(solution)))
+    logging.exception("Exception: ")
+    print("%d NaNs in solution" % np.any(np.isnan(solution.A)))
 
 #Input: matrix to project
 #Tuple of rows and columns that can be nonzero in projection

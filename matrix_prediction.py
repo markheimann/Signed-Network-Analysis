@@ -43,36 +43,7 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
     test_labels = adj_matrix[test_row_indices, test_col_indices].A[0] #array of signs of test edges
 
     #perform learning on training matrix
-    train_complet = None #completed matrix to use for prediction
-
-    alg = alg.lower()
-    if alg == "svp":
-      try:
-        rank,tol,max_iter,step_size = alg_params
-        train_complet = svp.sign_prediction_SVP(train_matrix, rank, tol,
-                                      max_iter, step_size)
-      except Exception: 
-        logging.exception("Exception: ")
-        raise ValueError("Could not perform SVP. Check input?")
-    elif alg == "sgd":
-      try:
-        learn_rate, loss_type, tol, max_iter, reg_param, dim = alg_params
-        factor1, factor2 = mf.matrix_factor_SGD(train_matrix, learn_rate, 
-                                          loss_type, tol, max_iter, 
-                                          reg_param, dim)
-        train_complet = csr_matrix.sign(csr_matrix(factor1*factor2.transpose()))
-      except Exception:
-        logging.exception("Exception: ")
-        e.printStackTrace()
-        raise ValueError("Could not perform SGD. Check input?")
-    elif alg == "als":
-      try:
-        max_iter, dim = alg_params
-        factor1, factor2 = mf.matrix_factor_ALS(train_matrix, dim, max_iter)
-        train_complet = csr_matrix.sign(csr_matrix(factor1.transpose()*factor2))
-      except Exception as e:
-        logging.exception("Exception: ")
-        raise ValueError("Could not perform ALS. Check input?")
+    train_complet = matrix_completion(adj_matrix, alg, alg_params)
 
     #WRITETEST to make sure this is same shape as adj matrix
     print train_complet.shape
@@ -88,20 +59,54 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
   false_positive_rate = false_positive_rate/num_folds
   return accuracy, false_positive_rate
 
+#Matrix completion with matrix factorization
+#Input: matrix to complete
+#       Algorithm (SVP, SGD, or ALS)
+#       Tuple of params other than matrix for each algorithm
+#         (see relevant methods for details)
+#Output: completed matrix
+def matrix_completion(matrix, alg, params):
+  alg = alg.lower()
+  completed_matrix = None
+  if alg == "svp":
+    try:
+      rank, tol, max_iter, step_size = params
+      completed_matrix = svp.sign_prediction_SVP(matrix, rank, tol, max_iter, step_size)
+    except:
+      logging.exception("Exception: ")
+      raise ValueError("invalid number or type of input for SVP?")
+  elif alg == "sgd":
+    try:
+      learn_rate, loss_type, tol, max_iter, reg_param, dim = params
+      factor1, factor2 = mf.matrix_factor_SGD(matrix, learn_rate, loss_type, tol, max_iter, reg_param, dim)
+      completed_matrix = csr_matrix.sign(csr_matrix(factor1*factor2.transpose()))
+    except:
+      logging.exception("Exception: ")
+      raise ValueError("invalid number or type of input for SGD?")
+  elif alg == "als":
+    try:
+      max_iter, dim = alg_params
+      factor1, factor2 = mf.matrix_factor_ALS(matrix, dim, max_iter)
+      completed_matrix = csr_matrix.sign(csr_matrix(factor1.transpose()*factor2))
+    except:
+      logging.exception("Exception: ")
+      raise ValueError("invalid number or type of input for ALS?")
+  else:
+    raise ValueError("unrecognized matrix completion algorithm: ", alg)
+  return completed_matrix
+
 if __name__ == "__main__":
-  data_file_name = "Preprocessed Data/wiki_elections_csr.npy"
-  #EXCEPTIONHANDLING makes sure this file exists
+  data_file_name = "Preprocessed Data/small_network.npy"
+  #data_file_name = "Preprocessed Data/wiki_elections_csr.npy"
   try:
     adj_matrix = np.load(data_file_name).item()
   except Exception as e:
     raise ValueError("could not load adj_matrix from file: ", e)
 
-  NUM_VERTICES = 100 #take a small part of dataset
-  adj_matrix = csr_matrix(adj_matrix.todense()[:NUM_VERTICES,:NUM_VERTICES])
   num_folds = 10
 
-  use_svp = True
-  use_sgd = False
+  use_svp = False
+  use_sgd = True
   use_als = False
 
   alg = ""
@@ -122,12 +127,14 @@ if __name__ == "__main__":
   #settings if using SGD
   elif use_sgd:
     #Parameters used for this experiment
-    learning_rate = 1
-    loss_type = "sigmoid"
-    tol = 1
-    max_iter = 5
-    reg_param = 1
-    dim = 20
+
+    #https://www.cs.uic.edu/~liub/KDD-cup-2007/proceedings/Regular-Paterek.pdf
+    learning_rate = 0.1#0.05 for square hinge
+    loss_type = "sigmoid" #"squarehinge"
+    tol = adj_matrix.nnz/10
+    max_iter = 1000
+    reg_param = 0.1#0.5 for square hinge
+    dim = 10
 
     #Bundle up these parameters and use this algorithm
     alg_params = (learning_rate, loss_type, tol, max_iter, reg_param, dim)
