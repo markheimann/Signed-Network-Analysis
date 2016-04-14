@@ -4,12 +4,13 @@ import unittest
 import numpy as np
 from scipy.sparse import csr_matrix
 
-import svp_sign_prediction
+import svp_sign_prediction as svp
 import hoc_edge_features as hoc_features
 import hoc_prediction
 import preprocess_ES
 import preprocess_W
 import ml_pipeline as pipeline
+import simulate_networks as sim
 
 class test_preprocess(unittest.TestCase):
   #test preprocessing of wikipedia dataset
@@ -113,10 +114,10 @@ class test_global_prediction(unittest.TestCase):
     tol = 1
     max_iter = 10
     step_size = 1
-    matrix_complet = sign_prediction_SVP(adj_matrix, rank, tol,
+    matrix_complet = svp.sign_prediction_SVP(adj_matrix, rank, tol,
                                         max_iter, step_size, mode = "test")
     np_sol = np.asarray(matrix_complet.todense())
-    prop_recovered = float(np.sum(adj_matrix == np_sol))/(adj_matrix.nnz())
+    prop_recovered = float(np.sum(adj_matrix == np_sol))/(adj_matrix.nnz)
     #matrix completion doesn't ruin original entries in small dataset
     assert prop_recovered == 1.0 #TODO: write more extensive tests where you test the completion part too
 
@@ -128,5 +129,77 @@ class test_global_prediction(unittest.TestCase):
   def test_ALS(self):
     pass
 
+class test_simulation(unittest.TestCase):
+  #toy example for all tests
+  cluster_sizes = [1,2,3,4]
+  network_size = sum(cluster_sizes)
+
+  #list of signs of edges
+  sim_full_network_edges_list = list()
+
+  #compute appropriate sign of each edge and save it in list
+  for edge_number in range(network_size**2):
+    edge = sim.get_edge_from_index(edge_number,network_size)
+    edge_sign = sim.get_complete_balanced_network_edge_sign(cluster_sizes,edge)
+    sim_full_network_edges_list.append(edge_sign)
+
+  #convert to numpy array
+  np_full_network_edges = np.asarray(sim_full_network_edges_list)
+  #give appropriate shape
+  np_full_network = np_full_network_edges.reshape(network_size,network_size)
+  #convert to CSR matrix
+  sim_full_network = csr_matrix(np_full_network)
+  
+  #make sure we're calculating the weakly-balanced complete matrix correctly
+  def test_get_edge_sign(self):
+    edge1 = sim.get_complete_balanced_network_edge_sign(self.cluster_sizes,(2,2))
+    assert edge1 == 1 #should be at right edge of second cluster
+    edge2 = sim.get_complete_balanced_network_edge_sign(self.cluster_sizes,(2,3))
+    assert edge2 == -1 #should be just outside second cluster
+
+  #basic test: creates the network we think in easiest case (no sparsity or noise)
+  def test_sample_network_simulation(self):
+    sparsity = 1
+    noise_prob = 0
+    sim_partial_network = sim.sample_network(self.cluster_sizes,sparsity,noise_prob)
+
+    #without sparsity should completely recover network
+    #and no noise either
+    assert (self.sim_full_network != sim_partial_network).nnz == 0
+
+  #test to make sure generating networks of desired sparsity
+  def test_sample_network_sparse_quantity(self):
+    #with sparsity should in expectation recover a lot of the network
+    sparsity = 0.5
+    noise_prob = 0
+    sim_partial_network = sim.sample_network(self.cluster_sizes,sparsity,noise_prob)
+    expected_num_edges = self.network_size**2 * sparsity
+
+    #Probabilistic test: MAY FAIL WITH CORRECT BEHAVIOR (BUT W/ LOW PROBABILITY)
+    #by a Chernoff bound, this should deviate from expected number of edges
+    #by more than t*(network_size/2)
+    #with probability 2*e^(-t^2/2)
+    #here set t = 4, so this tests passes with probability 1 - 2*e^-8
+    actual_num_edges = sim_partial_network.nnz
+    assert abs(actual_num_edges - expected_num_edges) <= 20
+
+  #test to make sure noise is flipping edges
+  def test_sample_network_noise(self):
+    #with complete noise should recover opposite of matrix
+    #could write another probabilistic test for the case of partial noise
+    #but this is OK
+    sparsity = 1
+    noise_prob = 1
+    sim_partial_network = sim.sample_network(self.cluster_sizes,sparsity,noise_prob)
+
+    #should recover opposite of matrix
+    assert (self.sim_full_network == sim_partial_network).nnz == 0
+
+
 if __name__ == "__main__":
+  print "Note: some tests are probabilistic and may ",
+  print "fail with correct behavior (but only with low probability)"
+  print
+  print "Running tests..."
+
   unittest.main()

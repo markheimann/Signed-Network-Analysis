@@ -1,28 +1,26 @@
 #Simulate signed networks
 #Based on Chiang et. al, 2014
-
 import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import svds
 from scipy.linalg import norm
 from scipy.stats import powerlaw
 
-#Input: number and size of clusters
+#Input: list of sizes of each cluster
 #   sparsity level (percentage of edges to sample)
 #   noise level (probability sample edge sign is flipped)
 #   sampling process (uniform or power law)
 #Output: noisy sampled network
-#TODO: write official tests
-#TODO: power law sampling
-def sample_network(num_clusters,
-                   cluster_size, 
+#(optional) TODO: power law sampling
+def sample_network(cluster_sizes, 
                    sparsity_level, 
                    noise_prob, 
                    sampling_process = "uniform"):
 
   #will fill in with correct entries
-  #sampled_network = np.zeros(full_network.shape).flatten() #sampling from 1D array is easier
-  network_dimension = num_clusters * cluster_size
+  network_dimension = sum(cluster_sizes)
+
+  #network_dimension = num_clusters * cluster_size
   network_size = network_dimension**2
   num_samples = sparsity_level*network_size #number of samples to take from network
 
@@ -36,12 +34,11 @@ def sample_network(num_clusters,
   samples = np.random.choice(np.arange(network_size), num_samples, replace=False, p = probs)
   
   #Determine which indices to sample noisily (with wrong sign)
-  
   edges = [get_edge_from_index(sample, network_dimension) for sample in samples]
   rows, cols = zip(*edges)
 
   #Compute true data
-  data = np.asarray([get_complete_balanced_network_edge_sign(cluster_size, edge) for edge in edges])
+  data = np.asarray([get_complete_balanced_network_edge_sign(cluster_sizes, edge) for edge in edges])
   
   #Make data noisy: 1s are true, -1s are noise
   noise = 2 * (np.random.random(num_samples) > noise_prob) - 1 #1 if entry should be sampled correctly, -1 otherwise
@@ -50,8 +47,8 @@ def sample_network(num_clusters,
   sampled_network = csr_matrix((data, (rows, cols)), shape = (network_dimension, network_dimension))
   return sampled_network
 
-#Map a number between 1 and n
-#to a 2-d coordinate with entries between 1 and sqrt(n)
+#Map a number between 1 and n^2
+#to a 2-d coordinate with entries between 1 and n
 #That way we can sample 2D edges from a 1D array
 #Basically, we are implicitly un-flattening an array
 
@@ -59,6 +56,8 @@ def sample_network(num_clusters,
 #       matrix dimension size (num rows/cols in square matrix)
 #Output: 2D coordinate to which that index maps
 def get_edge_from_index(index, matrix_dim_size):
+  if index < 0 or index >= matrix_dim_size**2:
+    raise ValueError("index out of matrix range")
   row_index = index / matrix_dim_size
   col_index = index % matrix_dim_size
   return (row_index, col_index)
@@ -70,27 +69,27 @@ def get_edge_from_index(index, matrix_dim_size):
 #   how many nodes to each cluster
 #   edge to get sign of
 #Output: sign of desired edge
-def get_complete_balanced_network_edge_sign(cluster_size, edge):
+def get_complete_balanced_network_edge_sign(cluster_sizes, edge):
   #note: balanced network is basically blocks of 1s on the diagonal, -1s everywhere else
   row_index, col_index = edge
-  #edges in same cluster if they are the same multiple of cluster_size
-  #(not counting remainder, which only specifies their location in the block)
-  return 2*(col_index/cluster_size == row_index/cluster_size) - 1 
 
-
-if __name__ == "__main__":
-  #TODO write test
-  cluster_size = 2
-  num_clusters = 5
-  network_size = num_clusters*cluster_size
-  sparsity = 0.9
-  noise_prob = 0.9
-  sim_full_network = np.asarray([get_complete_balanced_network_edge_sign(cluster_size,get_edge_from_index(edge,network_size)) for edge in np.arange(network_size*network_size)]).reshape(network_size,network_size)
-  sim_partial_network = sample_network(num_clusters,cluster_size,sparsity,noise_prob)
-  print "Full network: "
-  print sim_full_network
-  print "Partial network: "
-  print sim_partial_network.todense()
-  print sim_full_network == sim_partial_network
-  print sim_full_network == -1 * sim_partial_network
-
+  #find which cluster edge would be in
+  #(i.e. for edge to be in a cluster, row and col are in same cluster)
+  sign = -1 #assume edge isn't in a cluster by default
+  #go through each clusters and see if they're in the same cluster
+  num_considered = 0
+  for cluster_size in cluster_sizes:
+    row_in_cluster = False
+    col_in_cluster = False
+    if (row_index >= num_considered and row_index < num_considered + cluster_size):
+      row_in_cluster = True
+    if (col_index >= num_considered and col_index < num_considered + cluster_size):
+      col_in_cluster = True
+    if row_in_cluster and col_in_cluster: #we've found edge and in cluster
+      sign = 1
+      break
+    elif row_in_cluster ^ col_in_cluster: #we've found edge and not in cluster
+      break #leave sign -1
+    else:
+      num_considered += cluster_size #keep looking for edge
+  return sign
