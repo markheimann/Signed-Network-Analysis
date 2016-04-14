@@ -74,7 +74,7 @@ def get_complete_balanced_network_edge_sign(cluster_sizes, edge):
   row_index, col_index = edge
 
   #find which cluster edge would be in
-  #(i.e. for edge to be in a cluster, row and col are in same cluster)
+  #(i.e. for edge to be in a cluster, row and col are in same cluster range)
   sign = -1 #assume edge isn't in a cluster by default
   #go through each clusters and see if they're in the same cluster
   num_considered = 0
@@ -88,8 +88,33 @@ def get_complete_balanced_network_edge_sign(cluster_sizes, edge):
     if row_in_cluster and col_in_cluster: #we've found edge and in cluster
       sign = 1
       break
+    #exclusive or: row is in this cluster range but column is not (so edge is not in a cluster)
     elif row_in_cluster ^ col_in_cluster: #we've found edge and not in cluster
       break #leave sign -1
     else:
       num_considered += cluster_size #keep looking for edge
   return sign
+
+#Construct a complete network explicitly
+#Mainly used for small examples for testing
+#Input: cluster sizes
+#Output: adjacency matrix of complete network
+def construct_full_network(cluster_sizes):
+  network_size = sum(cluster_sizes)
+
+  #list of signs of edges
+  sim_full_network_edges_list = list()
+
+  #compute appropriate sign of each edge and save it in list
+  for edge_number in range(network_size**2):
+    edge = get_edge_from_index(edge_number,network_size)
+    edge_sign = get_complete_balanced_network_edge_sign(cluster_sizes,edge)
+    sim_full_network_edges_list.append(edge_sign)
+
+  #convert to numpy array
+  np_full_network_edges = np.asarray(sim_full_network_edges_list)
+  #give appropriate shape
+  np_full_network = np_full_network_edges.reshape(network_size,network_size)
+  #convert to CSR matrix
+  sim_full_network = csr_matrix(np_full_network)
+  return sim_full_network
