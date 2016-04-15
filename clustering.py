@@ -80,6 +80,8 @@ def cluster_signed_network(adj_matrix, cluster_sizes, method, completion_alg=Non
     raise ValueError("unrecognized clustering method: ", method)
 
   #Get top k (number of clusters) eigenvectors
+  print "getting eigenvalues"
+  print cluster_matrix.shape
   cluster_matrix = cluster_matrix.asfptype()
   try:
     eigenvals, top_eigenvecs = eigs(cluster_matrix, k=num_clusters)
@@ -110,14 +112,18 @@ def signed_laplacian(adj_matrix):
   #but gets the job done for scale of these experiments
   for row_index in range(adj_matrix.shape[0]):
     row = adj_matrix.getrow(row_index).A[0]
-    #sum absolute values of all row elements
+    #sum absolute values of all non-diagonal row elements
     #NOTE: paper sums over non-diagonal row elements
-    #but earlier sources define absolute degree matrix this way 
+    #but earlier sources define absolute degree matrix as summing all row elements 
     #e.g. http://www.cs.utexas.edu/users/inderjit/public_papers/sign_clustering_cikm12.pdf
     #this definition is also more consistent with typical definition of graph Laplacian
     #furthermore, it shouldn't matter since diagonal edges are basically self-relationships
     #empirically, this change doesn't hurt, maybe helps a little
-    abs_deg_data.append(np.count_nonzero(row))
+    #but use this one to match this paper
+    degree = np.count_nonzero(row)
+    if abs(adj_matrix[row_index,row_index]) == 1: #don't count diagonal entry
+      degree -= 1 #subtract off diagonal entry if 
+    abs_deg_data.append(degree)
   abs_deg_matrix = diags([abs_deg_data],[0],format="csr") #make diagonal matrix with this data
   return abs_deg_matrix - adj_matrix
 
@@ -132,16 +138,9 @@ def clustering_pipeline(network_params, clustering_params):
   #Create network
   cluster_sizes, sparsity, noise_prob = network_params
   num_clusters = len(cluster_sizes)
-
-  #NOTE: currently only support up to 6 clusters
-  if num_clusters > 6: 
-    #holdup is our evaluation of the clusters
-    #where we try all permutations of labels to see which ones yield best match
-    #to make up for the fact that cluster numbers (labels) are interchangeable
-    #without this part (or making this part more efficient), we could do more clusters
-    raise ValueError("currently don't support cluster evaluation for more than 6 clusters")
   
   network = sim.sample_network(cluster_sizes, sparsity, noise_prob)
+  rows, cols = network.nonzero()
   
   #Assign ground truth labels (the first "cluster_size" are in cluster 0, next are in cluster 1, etc.)
   cluster_labels = list()
@@ -153,37 +152,42 @@ def clustering_pipeline(network_params, clustering_params):
   #perform clustering
   cluster_sizes, method, completion_alg, completion_params, mode = clustering_params  
   cluster_predictions = cluster_signed_network(network, cluster_sizes, method, completion_alg, completion_params, mode)
-  cluster_accuracy = evaluate_cluster_accuracy(cluster_predictions, cluster_labels, num_clusters)
+  cluster_accuracy = evaluate_cluster_accuracy(cluster_predictions, cluster_labels, rows, cols)
   return cluster_accuracy
 
 #Evaluate clustering accuracy
 #Input: predicted cluster labels
 #       ground truth cluster assignments
-#       number of clusters
+#       rows, cols of edges in the graph
 #Output: proportion of correctly clustered
-#WARNING THIS IS A BRUTE FORCE METHOD
-#WORKS ONLY FOR 6 or so CLUSTERS OR FEWER (FACTORIAL IN NUMBER OF CLUSTERS)
-#ALL OUR EXPERIMENTS REQUIRE AND TIME IS SHORT SO HERE GOES
-#TODO DO THIS MORE INTELLIGENTLY
-def evaluate_cluster_accuracy(cluster_predictions, cluster_labels, num_clusters):
-  #kmeans may label clusters differently from ground truth (it just gives them some number)
-  #so we may have the right clustering but still be wrong only because kmeans gave cluster elts different labels
-  #Brute force: Try all permutations of different cluster names and see which one yields highest accuracy
-  max_acc = 0
-  for perm in permutations(range(num_clusters)):
-    possible_clustering = [perm[label] for label in cluster_predictions]
-    max_acc = max(max_acc, np.mean(np.asarray(possible_clustering) == cluster_labels))
-  return max_acc
+def evaluate_cluster_accuracy(cluster_predictions, cluster_labels, rows, cols):
+  num_correctly_clustered = 0
+  num_data = len(rows)
+  for edge_index in range(num_data):
+    row = rows[edge_index]
+    col = cols[edge_index]
+
+    #edges are in the same cluster (both predicted and actually)
+    if cluster_predictions[row] == cluster_predictions[col] and \
+          cluster_labels[row] == cluster_labels[col]:
+      num_correctly_clustered += 1
+
+    #edges aren't in the same cluster (both predicted and actually)
+    elif cluster_predictions[row] != cluster_predictions[col] and \
+          cluster_labels[row] != cluster_labels[col]:
+      num_correctly_clustered += 1
+  return float(num_correctly_clustered)/num_data
+
 
 if __name__ == "__main__":
   #Parameters for simulating network
-  cluster_sizes = [3,4,5]
-  sparsity = 0.5
+  cluster_sizes = [100]*10
+  sparsity = 0.06
   noise_prob = 0
   network_params = (cluster_sizes, sparsity, noise_prob)
   mode="test"
   #Parameters for performing clustering
-  #'''
+  '''
   method = "signed laplacian"
   completion_alg = None
   completion_params = None

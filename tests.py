@@ -45,6 +45,18 @@ class test_hoc(unittest.TestCase):
     for length in products.keys():
       assert np.array_equal(products[length][0].todense(), (matrix1 ** length).todense())
 
+  #test getting unique edges from a matrix
+  #i.e. edge (i,j) and (j,i) not both in matrix
+  def test_get_unique_edges(self):
+    data_file_name = "Preprocessed Data/small_network.npy"
+    adj_matrix = np.load(data_file_name).item()
+    unique_edges = hoc_prediction.get_unique_edges(adj_matrix)
+    unique_edge_set = set(unique_edges)
+    for edge in unique_edges:
+      #make sure either edge is symmetric
+      #or its reverse is not in set
+      assert edge == edge[::-1] or edge[::-1] not in unique_edge_set
+
   #tests with more subjective criteria to see what HOC classifier actually learns
   def test_hoc_learning(self):
     data_file_name = "Preprocessed Data/small_network.npy"
@@ -56,18 +68,6 @@ class test_hoc(unittest.TestCase):
     #so only positives and some are false
     avg_acc, avg_fpr = hoc_prediction.hoc_learning_pipeline(adj_matrix, 
                       network_name, max_cycle_order, num_folds = 5, num_features = 0)
-    #should be 1.0 in theory but sometimes maybe gets a signal from the noise 
-    #so give ourselves a little wiggle room
-    assert avg_fpr >= 0.8
-
-    #should mostly predict mode label of 1 because few features to learn from
-    #so high rate of false positives
-    avg_acc, avg_fpr = hoc_prediction.hoc_learning_pipeline(adj_matrix, 
-                       network_name, max_cycle_order, num_folds = 5, num_features = 1)
-    print "Average false positive rate on small dataset learning from 1 feature: ",
-    print avg_fpr #it seems this is high variance: TODO construct better test (maybe run 10 times and average results)
-    #(also does this say something about how important some features are?)
-    #assert avg_fpr >= 0.5
 
 #Test machine learning pipeline for generic k-fold cross validation (on graph data)
 class test_ml_pipeline(unittest.TestCase):
@@ -160,7 +160,7 @@ class test_simulation(unittest.TestCase):
     #with sparsity should in expectation recover a lot of the network
     sparsity = 0.5
     noise_prob = 0
-    sim_partial_network = sim.sample_network(self.cluster_sizes,sparsity,noise_prob)
+    sim_partial_network = sim.sample_network(self.cluster_sizes,sparsity,noise_prob, symmetric=False)
     expected_num_edges = self.network_size**2 * sparsity
 
     #Probabilistic test: MAY FAIL WITH CORRECT BEHAVIOR (BUT W/ LOW PROBABILITY)
@@ -169,6 +169,7 @@ class test_simulation(unittest.TestCase):
     #with probability 2*e^(-t^2/2)
     #here set t = 4, so this tests passes with probability 1 - 2*e^-8
     actual_num_edges = sim_partial_network.nnz
+    print expected_num_edges, actual_num_edges
     assert abs(actual_num_edges - expected_num_edges) <= 20
 
   #test to make sure noise is flipping edges
@@ -203,7 +204,7 @@ class test_clustering(unittest.TestCase):
         if row == col:
           #since this is full matrix, absolute degree will be network_size
           #and all diagonal entries of adj matrix are 1
-          assert signed_laplacian[row,col] == network_size - 1
+          assert signed_laplacian[row,col] == network_size - 2
         else:
           #since off diagonal entries of degree matrix are 0
           #so subtracting full network entries from 0

@@ -96,8 +96,8 @@ def matrix_completion(matrix, alg, params):
   return completed_matrix
 
 if __name__ == "__main__":
-  data_file_name = "Preprocessed Data/small_network.npy"
-  #data_file_name = "Preprocessed Data/wiki_elections_csr.npy"
+  #data_file_name = "Preprocessed Data/small_network.npy"
+  data_file_name = "Preprocessed Data/wiki_elections_csr.npy"
   try:
     adj_matrix = np.load(data_file_name).item()
   except Exception as e:
@@ -115,7 +115,7 @@ if __name__ == "__main__":
   #settings if using SVP
   if use_svp:
     #Parameters used for this experiment
-    rank = 5
+    rank = 40
     tol = 1
     max_iter = 10
     step_size = 1
@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     #https://www.cs.uic.edu/~liub/KDD-cup-2007/proceedings/Regular-Paterek.pdf
     learning_rate = 0.1#0.05 for square hinge
-    loss_type = "sigmoid" #"squarehinge"
+    loss_type = "squarehinge" #"sigmoid"
     tol = adj_matrix.nnz/10
     max_iter = 1000
     reg_param = 0.1#0.5 for square hinge
@@ -144,7 +144,7 @@ if __name__ == "__main__":
   elif use_als:
     #Parameters used for this experiment
     max_iter = 5
-    dim = 20
+    dim = 40
 
     #Bundle up these parameters and use this algorithm
     alg_params = (max_iter, dim)

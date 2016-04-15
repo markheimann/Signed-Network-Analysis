@@ -70,7 +70,8 @@ def matrix_factor_SGD(matrix,
     fac2_update += regularization_param * approx_factor2
     factor2[col,:] = approx_factor2 - learning_rate * fac2_update
     
-    error = diff(matrix,factor1,factor2)
+    #TODO this took a while
+    error = np.inf#diff(matrix,factor1,factor2)
     #if num_iters % 5 == 0:
     #  print "iteration ", num_iters
     if num_iters % 50 == 0:

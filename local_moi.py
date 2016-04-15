@@ -117,10 +117,10 @@ if __name__ == "__main__":
     adj_matrix = np.load(data_file_name).item()
   except Exception as e:
     raise ValueError("could not load adj matrix from file: ", e)
-  #max_cycle_order = 3
-  #discount = [0.5**i for i in range(3, max_cycle_order + 1)]
-  max_cycle_order = np.inf
-  discount = 0.0001
+  max_cycle_order = 10
+  discount = [0.5**i for i in range(3, max_cycle_order + 1)]
+  #max_cycle_order = np.inf
+  #discount = 0.0001
   acc, fpr = loocv_moi(adj_matrix, dataset, discount, max_cycle_order)
   print "Accuracy: ", acc
   print "False positive rate: ", fpr

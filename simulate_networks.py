@@ -9,12 +9,14 @@ from scipy.stats import powerlaw
 #Input: list of sizes of each cluster
 #   sparsity level (percentage of edges to sample)
 #   noise level (probability sample edge sign is flipped)
+#   whether or not to make the matrix symmetric
 #   sampling process (uniform or power law)
 #Output: noisy sampled network
 #(optional) TODO: power law sampling
 def sample_network(cluster_sizes, 
                    sparsity_level, 
                    noise_prob, 
+                   symmetric = True,
                    sampling_process = "uniform"):
 
   #will fill in with correct entries
@@ -45,6 +47,8 @@ def sample_network(cluster_sizes,
   data = data * noise
 
   sampled_network = csr_matrix((data, (rows, cols)), shape = (network_dimension, network_dimension))
+  if symmetric:
+    sampled_network = (sampled_network + sampled_network.transpose()).sign() #make symmetric
   return sampled_network
 
 #Map a number between 1 and n^2
