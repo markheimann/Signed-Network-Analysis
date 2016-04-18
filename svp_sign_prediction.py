@@ -29,9 +29,8 @@ def sign_prediction_SVP(adj_matrix,
 
   #Initialization
   num_iters = 1 #start counting from 1
-  dens = 0.01#math.log(adj_matrix.shape[0])/adj_matrix.shape[0] #initialize factors with this density
+  dens = 0.01 #initialize factors with this density
   solution = 2*rand(adj_matrix.shape[0], adj_matrix.shape[1], density=dens, format="csr")
-  #solution = csr_matrix(np.zeros(adj_matrix.shape)) #matrix of zeros
 
   #Iterate until tolerance level or maximum # iters is reached
   while num_iters <= max_iter and not within_tol(solution, adj_matrix, tol):
@@ -41,25 +40,11 @@ def sign_prediction_SVP(adj_matrix,
     solution = solution - step_size*(projection(
                           solution, rows, cols) - adj_matrix)
     #compute top <rank> SVs
-    #print solution.A
     solution = solution.asfptype()
-    #left_svecs, svals, right_svecs = svds(solution.A, k = rank)
     print "svd"
     left_svecs, svals, right_svecs = svd(solution.A)
-    '''
-    print "Left svecs:", left_svecs.shape
-    print left_svecs
-    print
-    print "svals:"
-    print svals 
-    print
-    print "Right svecs:", right_svecs.shape
-    print right_svecs
-    print
-    '''
     
     #form low rank approximation
-    #solution = csr_matrix(np.dot(np.dot(left_svecs, np.diag(svals)), right_svecs))
     solution = csr_matrix(np.dot(np.dot(left_svecs[:,:rank], np.diag(svals[:rank])), right_svecs[:rank,:]))
     print "completed iteration ", num_iters
     num_iters += 1
@@ -88,9 +73,5 @@ def within_tol(solution, adj_matrix, tol):
 #       rows, columns that can be nonzero in projection
 #Output: projection (keep observed indices)
 def projection(matrix, rows, cols):
-  #proj = csr_matrix(np.zeros(matrix.shape)) #matrix of zeros
   proj = csr_matrix((matrix[rows,cols].A[0], (rows,cols)), shape=matrix.shape)
-
-  #fill in with projected values
-  #proj[observed_indices] = matrix[observed_indices] 
   return proj

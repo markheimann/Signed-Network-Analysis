@@ -88,34 +88,6 @@ LR-SVP (rank 40, tol 100, max_iter 5, step size 1)
 LR-ALS (2 iters, 40 dims)
 HOC-5
 MOI-10: discount [0.5**i for i in range(3, max_cycle_order_moi + 1)]
-k = [100,200,300,400], noise = 0; sparsity = 0.005
-
-MOI results: 
-Accuracy: average 0.755830 with standard error 0.007808
-False positive rate: average 0.308331 with standard error 0.012780
-Model running time: average 0.772851 with standard error 0.009469
-
-HOC results:
-Accuracy: average 0.512633 with standard error 0.009426
-False positive rate: average 0.636207 with standard error 0.011301
-Model running time: average 6.945015 with standard error 0.023258
-
-ALS results:
-Accuracy: average 1.000000 with standard error 0.000000
-False positive rate: average 0.000000 with standard error 0.000000
-Model running time: average 0.233061 with standard error 0.001109
-
-SVP results:
-Accuracy: average 0.991566 with standard error 0.001129
-False positive rate: average 0.009967 with standard error 0.001367
-Model running time: average 0.543955 with standard error 0.012304
-
-=========================================================
-prediction (simulated):
-LR-SVP (rank 40, tol 100, max_iter 5, step size 1)
-LR-ALS (2 iters, 40 dims)
-HOC-5
-MOI-10: discount [0.5**i for i in range(3, max_cycle_order_moi + 1)]
 k = [100,200,300,400], noise = 0; sparsity = 0.0105
 
 MOI results: 

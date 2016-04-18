@@ -120,15 +120,8 @@ class test_global_prediction(unittest.TestCase):
     np_sol = np.asarray(matrix_complet.todense())
     prop_recovered = float(np.sum(adj_matrix == np_sol))/(adj_matrix.nnz)
     #matrix completion doesn't ruin original entries in small dataset
-    assert prop_recovered == 1.0 #TODO: write more extensive tests where you test the completion part too
-
-  #Test SGD completion on small matrix
-  def test_SGD(self):
-    pass
-
-  #Test ALS completion on small matrix
-  def test_ALS(self):
-    pass
+    #TODO: write more extensive tests where you test the completion part too
+    assert prop_recovered == 1.0
 
 class test_simulation(unittest.TestCase):
   #toy example for all tests

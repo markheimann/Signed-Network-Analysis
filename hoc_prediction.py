@@ -62,8 +62,6 @@ def kfold_CV(adj_matrix, folds, max_cycle_order, num_features = -1):
     elif num_features == 0: #train on random features
       print "train data: random matrix of shape ", train_data.shape
       train_data = np.random.random(train_data.shape)
-    
-    #print "number of features: ", train_data.shape[1]
 
     #train logistic regression classifier
     clf = LogisticRegression()
@@ -102,29 +100,3 @@ def hoc_learning_pipeline(adj_matrix, max_cycle_order, num_folds=10, num_feature
   fpr_stderr = analytics.error_width(analytics.sample_std(fpr_fold_data), num_folds)
   time_stderr = analytics.error_width(analytics.sample_std(time_fold_data), num_folds)
   return avg_acc, acc_stderr, avg_fpr, fpr_stderr, avg_time, time_stderr
-
-if __name__ == "__main__":
-  #data_file_name = "Preprocessed Data/wiki_elections_csr.npy"
-  #dataset_name = "wikipedia"
-  #data_file_name = "Preprocessed Data/Slashdot090221_csr.npy"
-  #dataset_name = "slashdot"
-  #data_file_name = "Preprocessed Data/epinions_csr.npy"
-  #dataset_name = "epinions"
-  #data_file_name = "Preprocessed Data/small_network.npy"
-  #dataset_name = "small"
-  dataset_name = "sim1234500"
-  #if not os.path.exists(data_file_name):
-  #  raise ValueError("invalid path for data file")
-
-  adj_matrix = sim.sample_network([100,200,300,400,500],0.1,0.01)
-  #adj_matrix = np.load(data_file_name).item()
-  print("using %s dataset" % dataset_name)
-  max_cycle_order = 3
-
-  num_folds = 10
-  num_features = -1
-  avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = hoc_learning_pipeline(adj_matrix, max_cycle_order, num_folds, num_features)
-  print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
-  print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
-  print("Model running time: average %f with standard error %f" % (avg_time, stderr_time))
-

@@ -9,6 +9,8 @@ from scipy.sparse.linalg import svds
 from scipy.linalg import norm, lstsq
 import math
 
+#NOTE: SGD doesn't work very well--???
+
 #Matrix factorization with stochastic gradient descent
 #Input: matrix, 
 #       learning rate/loss type/tolerance,max # of iters for SGD, 
@@ -27,14 +29,11 @@ def matrix_factor_SGD(matrix,
   matrix_density = matrix.nnz/(matrix.shape[0] * matrix.shape[1])
   #initialization of two factors: small random numbers between -0.01 and 0.01
   #may not want to initialize completely dense matrix or will take a while
-  dens = 1#math.log(matrix.shape[0])/matrix.shape[0] #initialize factors with this density
+  dens = 1 #initialize factors with this density
   factor1 = -4*rand(matrix.shape[0], dim, density=dens, format="csr")
   fac1_rows, fac1_cols = factor1.nonzero()
-  #factor1 = 0.0001*(factor1 - csr_matrix((np.ones(factor1.nnz),(fac1_rows,fac1_cols)), shape=factor1.shape ))
   factor2 = -4*rand(matrix.shape[0], dim, density=dens, format="csr")
   fac2_rows, fac2_cols = factor2.nonzero()
-  #factor2 = 0.0001*(factor2 - csr_matrix((np.ones(factor2.nnz),(fac2_rows,fac2_cols)),shape=factor2.shape ))
-  #print factor2.min(), factor2.max()
 
   num_iters = 1 #start counting from 1
   #iterate over all nonzero entries (training entries)
@@ -45,8 +44,6 @@ def matrix_factor_SGD(matrix,
   errors = list()
   while num_iters <= max_iters and error > tol:
     rows, cols = matrix.nonzero()
-    #nonzero_entries = zip(rows, cols)
-    #for entry in range(len(rows)): 
     entry = np.random.randint(len(rows)) #choose entry at random
     row = rows[entry]
     col = cols[entry]
@@ -68,10 +65,8 @@ def matrix_factor_SGD(matrix,
     fac2_update += regularization_param * approx_factor2
     factor2[col,:] = approx_factor2 - learning_rate * fac2_update
     
-    #TODO this took a while
-    error = np.inf#diff(matrix,factor1,factor2)
-    #if num_iters % 5 == 0:
-    #  print "iteration ", num_iters
+    #NOTE diff took a while
+    error = diff(matrix,factor1,factor2)
     if num_iters % 50 == 0:
       errors.append(error)
     num_iters += 1
@@ -89,16 +84,11 @@ def matrix_factor_SGD(matrix,
 #Output: Frobenius norm of difference between matrix and product 
 def diff(matrix,factor1,factor2):
   factor_product_sign = (factor1*factor2.transpose()).sign()
-  #print factor_product_sign.nnz
-  #print (factor_product_sign != 1).nnz
   rows, cols = matrix.nonzero()
   matrix_data = np.asarray(matrix[rows,cols])[0]
   factor_data = np.asarray(factor_product_sign[rows,cols])[0]
-  #print matrix_data[:10]
-  #print factor_data[:10]
   difference = np.sum(matrix_data != factor_data)
-  #print difference
-  return difference#norm(difference.A, "fro")
+  return difference
 
 #Compute gradient of loss function at our point
 #with respect to one of the variables

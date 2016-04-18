@@ -39,6 +39,11 @@ def predict_sign_MOI(prediction_matrices, discount_factor, edge, max_cycle_order
     prediction = 2*(imbalance >= 0) - 1
   return prediction
 
+#Input: adjacency matrix
+#       discount factor //list if finite max cycle order, otherwise single value
+#       max cycle order to consider (np.inf for signed Katz)
+#       discount factor 
+#Output: matrices used to compute MOI
 def get_prediction_matrices(adj_matrix, discount_factor, max_cycle_order):
   if max_cycle_order == np.inf: #compute signed Katz measure
     if type(discount_factor) is not float:
@@ -66,6 +71,12 @@ def get_prediction_matrices(adj_matrix, discount_factor, max_cycle_order):
       order += 1
     return products
 
+#Compute k-fold cross validation using MOI
+#Input: adjacency matrix
+#       discount factor //list if finite max cycle order, otherwise single value
+#       max cycle order to consider (np.inf for signed Katz)
+#       number of folds
+#Output: accuracy, false positive rate, running time info
 def kfoldcv_moi(adj_matrix, discount, max_cycle_order, num_folds = 10):
   unique_edge_list = pipeline.get_unique_edges(adj_matrix)
   data_folds = pipeline.kfold_CV_split(unique_edge_list, num_folds)
@@ -115,63 +126,3 @@ def kfoldcv_moi(adj_matrix, discount, max_cycle_order, num_folds = 10):
   fpr_stderr = analytics.error_width(analytics.sample_std(false_positive_rate_fold_data), num_folds)
   time_stderr = analytics.error_width(analytics.sample_std(time_fold_data), num_folds)
   return avg_acc, acc_stderr, avg_fpr, fpr_stderr, avg_time, time_stderr
-
-
-#DEPRECATED
-#Evaluate MOI with leave-one-out cross-validation
-#(Train on all edges except one, test on remaining edge. Rotate through all edges doing this)
-#Input: adjacency matrix
-#       dataset name (e.g. "small")
-#       list of discount factors for each cycle
-#       maximum cycle order
-#Output: cross-validation accuracy, false positive rate
-def loocv_moi(adj_matrix, discount, max_cycle_order):
-  num_data = adj_matrix.nnz
-  rows, cols = adj_matrix.nonzero() #each have length num_data
-
-  #get nonzero entries and convert to vector
-  data = np.squeeze(np.asarray(adj_matrix[adj_matrix.nonzero()]))
-
-  num_preds = 0 #total predictions
-  num_correct = 0 #correct predictions
-  num_fp = 0 #false positives
-  num_tn = 0 #true negatives
-  for datum_index in range(num_data):
-    #form edge and get its label
-    edge = (rows[datum_index], cols[datum_index])
-    edge_label = adj_matrix[edge]
-
-    #create version of adjacency matrix with this edge set to 0
-    loo_rows = np.delete(rows, datum_index)
-    loo_cols = np.delete(cols, datum_index)
-    loo_data = np.delete(data, datum_index)
-    loo_adj_matrix = csr_matrix((loo_data, (loo_rows, loo_cols)), shape=adj_matrix.shape)
-    predicted_sign = predict_sign_MOI(loo_adj_matrix, discount, edge, max_cycle_order)
-    num_preds += 1 #made a prediction
-
-    if predicted_sign == edge_label: #correct prediction
-      num_correct += 1
-      if predicted_sign == -1: #correct negative prediction (true negative)
-        num_tn += 1
-    elif predicted_sign == 1: #false positive
-      num_fp += 1
-
-  #compute LOOCV accuracy and false positive rate
-  accuracy = float(num_correct)/num_preds
-  false_positive_rate = float(num_fp)/(num_fp + num_tn)
-  return accuracy, false_positive_rate
-
-
-if __name__ == "__main__":
-  data_file_name = "Preprocessed Data/small_network.npy"
-  try:
-    adj_matrix = np.load(data_file_name).item()
-  except Exception as e:
-    raise ValueError("could not load adj matrix from file: ", e)
-  max_cycle_order = 10
-  discount = [0.5**i for i in range(3, max_cycle_order + 1)]
-  #max_cycle_order = np.inf
-  #discount = 0.0001
-  acc, fpr = loocv_moi(adj_matrix, discount, max_cycle_order)
-  print "Accuracy: ", acc
-  print "False positive rate: ", fpr

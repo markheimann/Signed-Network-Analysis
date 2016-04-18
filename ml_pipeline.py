@@ -60,7 +60,6 @@ def evaluate(predictions, labels):
   
   #false positives: prediction 1 but actual label -1
   num_false_positives = np.sum(predictions == labels + 2)
-  #print "number of false positives: ", num_false_positives
   #test predictions and labels both -1
   num_true_negatives = np.sum(np.logical_and(predictions == -1,labels == -1))
   false_positive_rate = 0

@@ -23,18 +23,18 @@ def run_experiment():
   simulated = True
   real = False
 
-  use_moi = True
+  use_moi = False
   use_hoc = True
-  use_svp = True
+  use_svp = False
   use_sgd_sh = False
   use_sgd_sig = False
-  use_als = True
+  use_als = False
 
   adj_matrix = None
   if simulated:
-    cluster_sizes = [500,500]
-    sparsity_level = 0.015
-    noise_prob = 0.06
+    cluster_sizes = [100,200,300,400]
+    sparsity_level = 0.01175
+    noise_prob = 0
     print "creating adjacency matrix..."
     adj_matrix = sim.sample_network(cluster_sizes, sparsity_level, noise_prob)
 
