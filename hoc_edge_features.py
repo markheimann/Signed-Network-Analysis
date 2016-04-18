@@ -12,10 +12,9 @@ import os
 
 #Input: adjacency matrix
 # Maximum order of cycles to consider
-# Name of network being applied to
 # Mode: can run normally or in test mode (used for unit tests)
 #Output: List of features for each edge
-def extract_edge_features(adj_matrix, network_name, max_cycle_order, mode="normal"):
+def extract_edge_features(adj_matrix, max_cycle_order, mode="normal"):
   if max_cycle_order < 3: #cycles must be at least length 3
     raise ValueError("Cycles must have length at least 3")
   print "Calculating feature matrices..."

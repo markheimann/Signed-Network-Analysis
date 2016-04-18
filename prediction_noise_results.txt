@@ -1,0 +1,223 @@
+=========================================================
+prediction (simulated):
+LR-SVP (rank 40, tol 100, max_iter 5, step size 1)
+LR-ALS (2 iters, 40 dims)
+HOC-5
+MOI-10: discount [0.5**i for i in range(3, max_cycle_order_moi + 1)]
+k = [500,500], noise = 0.05; sparsity = 0.01
+
+MOI results: 
+Accuracy: average 0.952199 with standard error 0.002867
+False positive rate: average 0.048642 with standard error 0.003521
+Model running time: average 1.971434 with standard error 0.019407
+
+HOC results:
+Accuracy: average 0.930721 with standard error 0.004658
+False positive rate: average 0.062912 with standard error 0.002453
+Model running time: average 22.174746 with standard error 0.118335
+
+ALS results:
+Accuracy: average 0.990631 with standard error 0.000544
+False positive rate: average 0.009432 with standard error 0.000897
+Model running time: average 0.249614 with standard error 0.001596
+
+SVP results:
+Accuracy: average 0.997515 with standard error 0.000319
+False positive rate: average 0.002729 with standard error 0.000436
+Model running time: average 2.494155 with standard error 0.020317
+
+=========================================================
+prediction (simulated):
+LR-SVP (rank 40, tol 100, max_iter 5, step size 1)
+LR-ALS (2 iters, 40 dims)
+HOC-5
+MOI-10: discount [0.5**i for i in range(3, max_cycle_order_moi + 1)]
+k = [500,500], noise = 0.06; sparsity = 0.01
+
+MOI results: 
+Accuracy: average 0.941188 with standard error 0.000867
+False positive rate: average 0.059018 with standard error 0.001761
+Model running time: average 1.943873 with standard error 0.009505
+
+HOC results:
+Accuracy: average 0.876124 with standard error 0.006014
+False positive rate: average 0.149354 with standard error 0.019450
+Model running time: average 22.437409 with standard error 0.140674
+
+ALS results:
+Accuracy: average 0.991167 with standard error 0.000510
+False positive rate: average 0.008301 with standard error 0.000604
+Model running time: average 0.242364 with standard error 0.002192
+
+SVP results:
+Accuracy: average 0.997750 with standard error 0.000304
+False positive rate: average 0.002386 with standard error 0.000465
+Model running time: average 2.448304 with standard error 0.030663
+
+=========================================================
+prediction (simulated):
+LR-SVP (rank 40, tol 100, max_iter 5, step size 1)
+LR-ALS (2 iters, 40 dims)
+HOC-5
+MOI-10: discount [0.5**i for i in range(3, max_cycle_order_moi + 1)]
+k = [500,500], noise = 0.07; sparsity = 0.01
+
+MOI results: 
+Accuracy: average 0.928414 with standard error 0.001581
+False positive rate: average 0.067230 with standard error 0.001452
+Model running time: average 1.911276 with standard error 0.005753
+
+HOC results:
+Accuracy: average 0.848139 with standard error 0.008567
+False positive rate: average 0.188811 with standard error 0.014026
+Model running time: average 22.066581 with standard error 0.206494
+
+ALS results:
+Accuracy: average 0.989928 with standard error 0.000527
+False positive rate: average 0.009838 with standard error 0.000808
+Model running time: average 0.245658 with standard error 0.002102
+
+SVP results:
+Accuracy: average 0.998215 with standard error 0.000290
+False positive rate: average 0.001679 with standard error 0.000434
+Model running time: average 2.888832 with standard error 0.080965
+
+=========================================================
+prediction (simulated):
+LR-SVP (rank 40, tol 100, max_iter 5, step size 1)
+LR-ALS (2 iters, 40 dims)
+HOC-5
+MOI-10: discount [0.5**i for i in range(3, max_cycle_order_moi + 1)]
+k = [500,500], noise = 0.08; sparsity = 0.01
+
+MOI results: 
+Accuracy: average 0.921438 with standard error 0.002602
+False positive rate: average 0.078747 with standard error 0.003535
+Model running time: average 1.955469 with standard error 0.017005
+
+HOC results:
+Accuracy: average 0.795027 with standard error 0.012148
+False positive rate: average 0.255914 with standard error 0.014859
+Model running time: average 22.169945 with standard error 0.096122
+
+ALS results:
+Accuracy: average 0.989110 with standard error 0.000702
+False positive rate: average 0.011633 with standard error 0.000735
+Model running time: average 0.236953 with standard error 0.001670
+
+SVP results:
+Accuracy: average 0.997546 with standard error 0.000143
+False positive rate: average 0.002884 with standard error 0.000290
+Model running time: average 3.114745 with standard error 0.049747
+
+=========================================================
+prediction (simulated):
+LR-SVP (rank 40, tol 100, max_iter 5, step size 1)
+LR-ALS (2 iters, 40 dims)
+HOC-5
+MOI-10: discount [0.5**i for i in range(3, max_cycle_order_moi + 1)]
+k = [500,500], noise = 0.1; sparsity = 0.015
+
+MOI results: 
+Accuracy: average 0.901068 with standard error 0.002387
+False positive rate: average 0.100126 with standard error 0.004973
+Model running time: average 1.995948 with standard error 0.007109
+
+HOC results:
+Accuracy: average 0.792108 with standard error 0.017612
+False positive rate: average 0.246163 with standard error 0.024857
+Model running time: average 22.785019 with standard error 0.087216
+
+ALS results:
+Accuracy: average 0.988755 with standard error 0.000749
+False positive rate: average 0.012237 with standard error 0.000818
+Model running time: average 0.243464 with standard error 0.001185
+
+SVP results:
+Accuracy: average 0.997980 with standard error 0.000261
+False positive rate: average 0.001984 with standard error 0.000346
+Model running time: average 3.228985 with standard error 0.039211
+
+=========================================================
+prediction (simulated):
+LR-SVP (rank 40, tol 100, max_iter 5, step size 1)
+LR-ALS (2 iters, 40 dims)
+HOC-5
+MOI-10: discount [0.5**i for i in range(3, max_cycle_order_moi + 1)]
+k = [500,500], noise = 0.15; sparsity = 0.015
+
+MOI results: 
+Accuracy: average 0.850206 with standard error 0.001436
+False positive rate: average 0.151479 with standard error 0.003438
+Model running time: average 2.029463 with standard error 0.021732
+
+HOC results:
+Accuracy: average 0.766152 with standard error 0.004407
+False positive rate: average 0.275634 with standard error 0.006049
+Model running time: average 22.481682 with standard error 0.129334
+
+ALS results:
+Accuracy: average 0.985949 with standard error 0.000530
+False positive rate: average 0.014378 with standard error 0.000959
+Model running time: average 0.247281 with standard error 0.002251
+
+SVP results:
+Accuracy: average 0.996664 with standard error 0.000394
+False positive rate: average 0.002878 with standard error 0.000415
+Model running time: average 3.132460 with standard error 0.024306
+
+=========================================================
+prediction (simulated):
+LR-SVP (rank 40, tol 100, max_iter 5, step size 1)
+LR-ALS (2 iters, 40 dims)
+HOC-5
+MOI-10: discount [0.5**i for i in range(3, max_cycle_order_moi + 1)]
+k = [500,500], noise = 0.2; sparsity = 0.015
+
+MOI results: 
+Accuracy: average 0.798934 with standard error 0.003300
+False positive rate: average 0.194819 with standard error 0.002832
+Model running time: average 1.966654 with standard error 0.007325
+
+HOC results:
+Accuracy: average 0.688528 with standard error 0.003700
+False positive rate: average 0.301988 with standard error 0.005993
+Model running time: average 22.359749 with standard error 0.101995
+
+ALS results:
+Accuracy: average 0.982568 with standard error 0.000772
+False positive rate: average 0.018601 with standard error 0.000982
+Model running time: average 0.250488 with standard error 0.001786
+
+SVP results:
+Accuracy: average 0.995650 with standard error 0.000250
+False positive rate: average 0.004192 with standard error 0.000341
+Model running time: average 3.233548 with standard error 0.059744
+
+=========================================================
+prediction (simulated):
+LR-SVP (rank 40, tol 100, max_iter 5, step size 1)
+LR-ALS (2 iters, 40 dims)
+HOC-5
+MOI-10: discount [0.5**i for i in range(3, max_cycle_order_moi + 1)]
+k = [500,500], noise = 0.25; sparsity = 0.015
+
+MOI results: 
+Accuracy: average 0.739424 with standard error 0.004705
+False positive rate: average 0.259243 with standard error 0.005121
+Model running time: average 2.089477 with standard error 0.029348
+
+HOC results:
+Accuracy: average 0.594987 with standard error 0.003114
+False positive rate: average 0.446566 with standard error 0.005631
+Model running time: average 24.833215 with standard error 0.093036
+
+ALS results:
+Accuracy: average 0.982287 with standard error 0.000895
+False positive rate: average 0.018127 with standard error 0.000979
+Model running time: average 0.242483 with standard error 0.003899
+
+SVP results:
+Accuracy: average 0.995378 with standard error 0.000331
+False positive rate: average 0.005056 with standard error 0.000515
+Model running time: average 3.444118 with standard error 0.053173

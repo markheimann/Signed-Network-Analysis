@@ -28,24 +28,22 @@ def matrix_factor_SGD(matrix,
   #initialization of two factors: small random numbers between -0.01 and 0.01
   #may not want to initialize completely dense matrix or will take a while
   dens = 1#math.log(matrix.shape[0])/matrix.shape[0] #initialize factors with this density
-  factor1 = 2*rand(matrix.shape[0], dim, density=dens, format="csr")
+  factor1 = -4*rand(matrix.shape[0], dim, density=dens, format="csr")
   fac1_rows, fac1_cols = factor1.nonzero()
-  factor1 = 0.01*(factor1 - csr_matrix((np.ones(factor1.nnz),(fac1_rows,fac1_cols)), shape=factor1.shape ))
-  factor2 = 2*rand(matrix.shape[0], dim, density=dens, format="csr")
+  #factor1 = 0.0001*(factor1 - csr_matrix((np.ones(factor1.nnz),(fac1_rows,fac1_cols)), shape=factor1.shape ))
+  factor2 = -4*rand(matrix.shape[0], dim, density=dens, format="csr")
   fac2_rows, fac2_cols = factor2.nonzero()
-  factor2 = 0.01*(factor2 - csr_matrix((np.ones(factor2.nnz),(fac2_rows,fac2_cols)),shape=factor2.shape ))
+  #factor2 = 0.0001*(factor2 - csr_matrix((np.ones(factor2.nnz),(fac2_rows,fac2_cols)),shape=factor2.shape ))
   #print factor2.min(), factor2.max()
 
-  num_iters = 0
+  num_iters = 1 #start counting from 1
   #iterate over all nonzero entries (training entries)
   #do unless stopping criterion is met 
   #(found good enough approximation or iterated long enough)
 
   error = np.inf
   errors = list()
-  while num_iters < max_iters and error > tol:
-    num_iters += 1
-
+  while num_iters <= max_iters and error > tol:
     rows, cols = matrix.nonzero()
     #nonzero_entries = zip(rows, cols)
     #for entry in range(len(rows)): 
@@ -76,6 +74,7 @@ def matrix_factor_SGD(matrix,
     #  print "iteration ", num_iters
     if num_iters % 50 == 0:
       errors.append(error)
+    num_iters += 1
 
   print("Found estimate with %f error in %d iterations" % \
     (diff(matrix,factor1,factor2), num_iters))

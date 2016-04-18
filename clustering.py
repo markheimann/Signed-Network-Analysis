@@ -12,6 +12,8 @@ import svp_sign_prediction as svp
 import matrix_factorization as mf
 from sklearn.cluster import KMeans
 import simulate_networks as sim
+import time
+import analytics
 
 from scipy.sparse.linalg.eigen.arpack.arpack import ArpackError
 
@@ -180,30 +182,48 @@ def evaluate_cluster_accuracy(cluster_predictions, cluster_labels, rows, cols):
 
 
 if __name__ == "__main__":
+  use_signed_laplacian = True
+  use_mf = True
+
   #Parameters for simulating network
   cluster_sizes = [100]*10
-  sparsity = 0.06
-  noise_prob = 0
+  sparsity = 0.05
+  noise_prob = 0.01
   network_params = (cluster_sizes, sparsity, noise_prob)
-  mode="test"
+  mode="normal" #"test"
   #Parameters for performing clustering
-  '''
-  method = "signed laplacian"
-  completion_alg = None
-  completion_params = None
+
+  if use_signed_laplacian:
   
-  '''
-  method = "matrix completion"
-  completion_alg = "svp"
-  rank = 10
-  tol = 1
-  max_iter = 10
-  step_size = 1
-  completion_params = (rank, tol, max_iter, step_size)
-  #'''
-  clustering_params = (cluster_sizes, method, completion_alg, completion_params, mode)
-  cluster_accuracy = clustering_pipeline(network_params, clustering_params)
-  print "Accuracy: ", cluster_accuracy
+    sl_method = "signed laplacian"
+    sl_completion_alg = None
+    sl_completion_params = None
+
+    sl_clustering_params = (cluster_sizes, sl_method, sl_completion_alg, sl_completion_params, mode)
+    before_sl_cluster = time.time()
+    sl_cluster_accuracy = clustering_pipeline(network_params, sl_clustering_params)
+    after_sl_cluster = time.time()
+    print "Clustering results with signed Laplacian: "
+    print "Clustering accuracy: ", sl_cluster_accuracy
+    print "Clustering standard error: ", analytics.error_width(analytics.sample_std(sl_cluster_accuracy), sum(cluster_sizes))
+    print "Clustering running time: ", after_sl_cluster - before_sl_cluster
+  if use_mf:
+    mf_method = "matrix completion"
+    mf_completion_alg = "svp"
+    rank = 40
+    tol = 100
+    max_iter = 5
+    step_size = 1
+    mf_completion_params = (rank, tol, max_iter, step_size)
+    
+    mf_clustering_params = (cluster_sizes, mf_method, mf_completion_alg, mf_completion_params, mode)
+    before_mf_cluster = time.time()
+    mf_cluster_accuracy = clustering_pipeline(network_params, mf_clustering_params)
+    after_mf_cluster = time.time()
+    print "Clustering results with matrix completion: "
+    print "Clustering accuracy: ", mf_cluster_accuracy
+    print "Clustering standard error: ", analytics.error_width(analytics.sample_std(mf_cluster_accuracy), sum(cluster_sizes))
+    print "Clustering running time: ", after_mf_cluster - before_mf_cluster
 
 
 

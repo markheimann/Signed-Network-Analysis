@@ -6,7 +6,9 @@ import numpy as np
 from scipy.sparse import csr_matrix, identity
 from scipy.sparse.linalg import svds, inv
 from scipy.linalg import norm
-import cPickle, os
+import cPickle, os, time
+import ml_pipeline as pipeline
+import analytics
 
 
 #MOI (measures of imbalance) for link sign prediction
@@ -18,10 +20,26 @@ import cPickle, os
 #       max cycle order to consider (np.inf for signed Katz)
 #       discount factor (or single discount factor if inf) //list if finite max cycle order, otherwise single value
 #Output: sign for that edge
-def predict_sign_MOI(adj_mat, dataset, discount_factor, edge, max_cycle_order):
+def predict_sign_MOI(prediction_matrices, discount_factor, edge, max_cycle_order):
   prediction = None
   if max_cycle_order < 3: #cycle must have length at least 3
     raise ValueError("maximum cycle order must be at least 3")
+  if max_cycle_order == np.inf: #compute signed Katz measure
+    prediction = 2*(prediction_matrices[edge] >= 0) - 1
+  else: #compute using formula in Lemma 11 from paper
+    #compute imbalance
+    imbalance = 0
+
+    #consider up to maximum cycle order
+    for cycle_order in range(3,max_cycle_order + 1):
+      #subtract 3 for indexing since starting from 3
+      imbalance += discount_factor[cycle_order - 3] * prediction_matrices[cycle_order - 3][edge]
+
+    #predict and return sign: 1 if imbalance is positive, -1 otherwise
+    prediction = 2*(imbalance >= 0) - 1
+  return prediction
+
+def get_prediction_matrices(adj_matrix, discount_factor, max_cycle_order):
   if max_cycle_order == np.inf: #compute signed Katz measure
     if type(discount_factor) is not float:
       raise ValueError("discount factor must be float") #TODO must be sufficiently small (< ||A||_2) too? 
@@ -30,42 +48,76 @@ def predict_sign_MOI(adj_mat, dataset, discount_factor, edge, max_cycle_order):
     prediction_matrix = inv(prediction_matrix)
     prediction_matrix = prediction_matrix - identity(adj_matrix.shape[0])
     prediction_matrix = prediction_matrix - discount_factor * adj_matrix
-
-    prediction = 2*(prediction_matrix[edge] >= 0) - 1
-  else: #compute using formula in Lemma 11 from paper
+    return prediction_matrix
+  else:
     if type(discount_factor) is not list:
       raise ValueError("for finite max cycle order, must provide list of discount factors for each cycle order between 3 and max")
-
 
     #Load in products of adjacency matrix of power up to max cycle order
     #Compute if needed
     products = list()
+    #'''
     current_product = csr_matrix(adj_matrix)
     order = 3
     while order <= max_cycle_order:
       highest_power_product = None
-      products_path = "moi_products/product_" + dataset + str(order) + ".npy"
-      if False: #os.path.exists(products_path): #NOTE can't redo this since adjacency matrix is slightly different for each CV round
-        #load this in as highest power product we have so far
-        current_product = cPickle.load(open(products_path, "r"))#.item()
-      else:
-        current_product = current_product.dot(adj_matrix) #compute next higher power product
-        #cPickle.dump(current_product, open(products_path, "w")) #...and save it
+      current_product = current_product.dot(adj_matrix) #compute next higher power product
       products.append(current_product) #add this to our list of products used to compute MOI
       order += 1
-    
-    #compute imbalance
-    imbalance = 0
+    return products
 
-    #consider up to maximum cycle order
-    for cycle_order in range(3,max_cycle_order + 1):
-      #subtract 3 for indexing since starting from 3
-      imbalance += discount_factor[cycle_order - 3] * products[cycle_order - 3][edge]
+def kfoldcv_moi(adj_matrix, discount, max_cycle_order, num_folds = 10):
+  unique_edge_list = pipeline.get_unique_edges(adj_matrix)
+  data_folds = pipeline.kfold_CV_split(unique_edge_list, num_folds)
 
-    #predict and return sign: 1 if imbalance is positive, -1 otherwise
-    prediction = 2*(imbalance >= 0) - 1
-  return prediction
+  accuracy_fold_data = list()
+  false_positive_rate_fold_data = list()
+  time_fold_data = list()
+  for fold_index in range(num_folds):
+    print("Fold %d:" % (fold_index + 1))
 
+    #get data
+    train_points = pipeline.join_folds(data_folds, fold_index)
+    test_points = data_folds[fold_index]   
+    train_test_overlap = False
+
+    train_row_indices, train_col_indices = zip(*train_points)
+    test_row_indices, test_col_indices = zip(*test_points)
+    train_labels = adj_matrix[train_row_indices, train_col_indices].A[0] #array of signs of training edges
+    test_labels = adj_matrix[test_row_indices, test_col_indices].A[0] #array of signs of test edges
+
+    #construct matrix using just training edges
+    train_matrix = csr_matrix((train_labels, (train_row_indices, train_col_indices)), shape = adj_matrix.shape)
+    train_matrix = (train_matrix + train_matrix.transpose()).sign() #make symmetric
+
+    #Make predictions
+    preds = list()
+    before_train = time.time()
+    prediction_matrices = get_prediction_matrices(train_matrix, discount, max_cycle_order)
+    for test_point in test_points:
+      predicted_sign = predict_sign_MOI(prediction_matrices, discount, test_point, max_cycle_order)
+      preds.append(predicted_sign)
+    after_train = time.time()
+    model_time = after_train - before_train
+    print "MOI model time for one fold: ", model_time
+    test_preds = np.asarray(preds)
+
+    #Evaluate
+    acc, fpr = pipeline.evaluate(test_preds, test_labels)
+    accuracy_fold_data.append(acc)
+    false_positive_rate_fold_data.append(fpr)
+    time_fold_data.append(model_time)
+
+  avg_acc = sum(accuracy_fold_data) / float(len(accuracy_fold_data))
+  avg_fpr = sum(false_positive_rate_fold_data) / float(len(false_positive_rate_fold_data))
+  avg_time = sum(time_fold_data) / float(len(time_fold_data))
+  acc_stderr = analytics.error_width(analytics.sample_std(accuracy_fold_data), num_folds)
+  fpr_stderr = analytics.error_width(analytics.sample_std(false_positive_rate_fold_data), num_folds)
+  time_stderr = analytics.error_width(analytics.sample_std(time_fold_data), num_folds)
+  return avg_acc, acc_stderr, avg_fpr, fpr_stderr, avg_time, time_stderr
+
+
+#DEPRECATED
 #Evaluate MOI with leave-one-out cross-validation
 #(Train on all edges except one, test on remaining edge. Rotate through all edges doing this)
 #Input: adjacency matrix
@@ -73,7 +125,7 @@ def predict_sign_MOI(adj_mat, dataset, discount_factor, edge, max_cycle_order):
 #       list of discount factors for each cycle
 #       maximum cycle order
 #Output: cross-validation accuracy, false positive rate
-def loocv_moi(adj_matrix, dataset, discount, max_cycle_order):
+def loocv_moi(adj_matrix, discount, max_cycle_order):
   num_data = adj_matrix.nnz
   rows, cols = adj_matrix.nonzero() #each have length num_data
 
@@ -94,7 +146,7 @@ def loocv_moi(adj_matrix, dataset, discount, max_cycle_order):
     loo_cols = np.delete(cols, datum_index)
     loo_data = np.delete(data, datum_index)
     loo_adj_matrix = csr_matrix((loo_data, (loo_rows, loo_cols)), shape=adj_matrix.shape)
-    predicted_sign = predict_sign_MOI(loo_adj_matrix, dataset, discount, edge, max_cycle_order)
+    predicted_sign = predict_sign_MOI(loo_adj_matrix, discount, edge, max_cycle_order)
     num_preds += 1 #made a prediction
 
     if predicted_sign == edge_label: #correct prediction
@@ -112,7 +164,6 @@ def loocv_moi(adj_matrix, dataset, discount, max_cycle_order):
 
 if __name__ == "__main__":
   data_file_name = "Preprocessed Data/small_network.npy"
-  dataset = "small"
   try:
     adj_matrix = np.load(data_file_name).item()
   except Exception as e:
@@ -121,6 +172,6 @@ if __name__ == "__main__":
   discount = [0.5**i for i in range(3, max_cycle_order + 1)]
   #max_cycle_order = np.inf
   #discount = 0.0001
-  acc, fpr = loocv_moi(adj_matrix, dataset, discount, max_cycle_order)
+  acc, fpr = loocv_moi(adj_matrix, discount, max_cycle_order)
   print "Accuracy: ", acc
   print "False positive rate: ", fpr

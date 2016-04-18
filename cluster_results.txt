@@ -1,0 +1,160 @@
+==========================
+Network size: 10x100
+Network sparsity: 0.02
+Network noise: 0
+SVP: (40,100,5,1)
+
+Clustering results with signed Laplacian: 
+Clustering accuracy:  0.216509445892
+Clustering standard error:  0.0130243274579
+Clustering running time:  0.876939058304
+
+Clustering results with matrix completion: 
+Clustering accuracy:  0.899365665041
+Clustering standard error:  0.00951352014695
+Clustering running time:  107.739369154
+
+========================
+Network size: 10x100
+Network sparsity: 0.04
+Network noise: 0
+SVP: (40,100,5,1)
+
+Clustering results with signed Laplacian: 
+Clustering accuracy:  0.121309297185
+Clustering standard error:  0.0103244056295
+Clustering running time:  1.21489596367
+
+Clustering results with matrix completion: 
+Clustering accuracy:  0.997116059465
+Clustering standard error:  0.00169576632293
+Clustering running time:  107.251060009
+
+========================
+Network size: 10x100
+Network sparsity: 0.06
+Network noise: 0
+SVP: (40,100,5,1)
+
+Clustering results with signed Laplacian: 
+Clustering accuracy:  0.139706577511
+Clustering standard error:  0.0109630584105
+Clustering running time:  1.51829600334
+
+Clustering results with matrix completion: 
+Clustering accuracy:  1.0
+Clustering standard error:  0.0
+Clustering running time:  107.975875139
+
+========================
+Network size: 10x100
+Network sparsity: 0.08
+Network noise: 0
+SVP: (40,100,5,1)
+
+Clustering results with signed Laplacian: 
+Clustering accuracy:  0.260212420961
+Clustering standard error:  0.013874506007
+Clustering running time:  1.96372294426
+
+Clustering results with matrix completion: 
+Clustering accuracy:  1.0
+Clustering standard error:  0.0
+Clustering running time:  107.543761015
+
+========================
+Network size: 10x100
+Network sparsity: 0.10
+Network noise: 0
+SVP: (40,100,5,1)
+
+Clustering results with signed Laplacian: 
+Clustering accuracy:  0.116011383999
+Clustering standard error:  0.010126832811
+Clustering running time:  2.29364585876
+
+Clustering results with matrix completion: 
+Clustering accuracy:  1.0
+Clustering standard error:  0.0
+Clustering running time:  108.477436781
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+========================
+Network size: 10x100
+Network sparsity: 0.05
+Network noise: 0.01
+SVP: (40,100,5,1)
+
+Clustering results with signed Laplacian: 
+Clustering accuracy:  0.131501673546
+Clustering standard error:  0.0106868603154
+Clustering running time:  1.45164895058
+
+Clustering results with matrix completion: 
+Clustering accuracy:  0.991741988496
+Clustering standard error:  0.00286178558765
+Clustering running time:  104.796331167
+
+========================
+Network size: 10x100
+Network sparsity: 0.05
+Network noise: 0.05
+SVP: (40,100,5,1)
+
+Clustering results with signed Laplacian: 
+Clustering accuracy:  0.120222062301
+Clustering standard error:  0.0102843919624
+Clustering running time:  1.41836595535
+
+Clustering results with matrix completion: 
+Clustering accuracy:  0.998662468877
+Clustering standard error:  0.00115574310892
+Clustering running time:  105.761009932
+
+========================
+Network size: 10x100
+Network sparsity: 0.05
+Network noise: 0.10
+SVP: (40,100,5,1)
+
+Clustering results with signed Laplacian: 
+Clustering accuracy:  0.130193962855
+Clustering standard error:  0.0106415926858
+Clustering running time:  1.41016888618
+
+Clustering results with matrix completion: 
+Clustering accuracy:  0.991655076495
+Clustering standard error:  0.00287667964093
+Clustering running time:  107.363224983
+
+========================
+Network size: 10x100
+Network sparsity: 0.05
+Network noise: 0.15
+SVP: (40,100,5,1)
+
+Clustering results with signed Laplacian: 
+Clustering accuracy:  0.128447189572
+Clustering standard error:  0.0105805722465
+Clustering running time:  1.46153903008
+
+Clustering results with matrix completion: 
+Clustering accuracy:  0.937753553622
+Clustering standard error:  0.00764014569832
+Clustering running time:  109.518539906
+
+========================
+Network size: 10x100
+Network sparsity: 0.05
+Network noise: 0.20
+SVP: (40,100,5,1)
+
+Clustering results with signed Laplacian: 
+Clustering accuracy:  0.34970861928
+Clustering standard error:  0.0150802022825
+Clustering running time:  1.38966202736
+
+Clustering results with matrix completion: 
+Clustering accuracy:  0.851697019868
+Clustering standard error:  0.0112387368604
+Clustering running time:  118.286692142

@@ -16,7 +16,7 @@ import random
 #Output: k disjoint sets of vertices whose 
 #union is the set of all edges (nonzero entries in matrix)
 def kfold_CV_split(data_points, num_folds=10):
-  random.shuffle(data_points) #note: data points
+  random.shuffle(data_points) #shuffle data points into random order
   fold_size = len(data_points)/num_folds
   folds = list() #data points (edges) in each fold
   for fold_index in range(num_folds): #append evenly sized folds of data
@@ -52,6 +52,7 @@ def join_folds(folds, fold_to_leave_out):
 #       false positive rate
 #Action: print diagnostics too
 def evaluate(predictions, labels):
+  #average prediction tells you if mostly one label predicted
   print("Predictions: avg %f" % np.mean(predictions))
   print("Labels: avg %f" % np.mean(labels))
   accuracy = np.mean(predictions == labels)
@@ -59,7 +60,7 @@ def evaluate(predictions, labels):
   
   #false positives: prediction 1 but actual label -1
   num_false_positives = np.sum(predictions == labels + 2)
-  print "number of false positives: ", num_false_positives
+  #print "number of false positives: ", num_false_positives
   #test predictions and labels both -1
   num_true_negatives = np.sum(np.logical_and(predictions == -1,labels == -1))
   false_positive_rate = 0
@@ -70,3 +71,13 @@ def evaluate(predictions, labels):
   print("False positive rate: %f" % false_positive_rate)
   return accuracy, false_positive_rate
 
+#get unique edges in adjacency matrix
+def get_unique_edges(adj_matrix):
+  rows,cols = adj_matrix.nonzero()
+  unique_edges = set()
+  for edge_index in range(len(rows)):
+    edge = (rows[edge_index],cols[edge_index])
+    if edge not in unique_edges and edge[::-1] not in unique_edges:
+      unique_edges.add(edge)
+  unique_edge_list = list(unique_edges)
+  return unique_edge_list

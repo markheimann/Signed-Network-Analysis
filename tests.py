@@ -27,10 +27,9 @@ class test_hoc(unittest.TestCase):
   def test_extract_edge_features(self):
     data_file_name = "Preprocessed Data/small_network.npy"
     adj_matrix = np.load(data_file_name).item()
-    network_name = "small"
     max_cycle_order = 5
     mode = "test"
-    hoc_features.extract_edge_features(adj_matrix, network_name, max_cycle_order, mode)
+    hoc_features.extract_edge_features(adj_matrix, max_cycle_order, mode)
 
   #Test recursive algorithm to compute feature matrix products
   def test_compute_feature_products(self):
@@ -62,12 +61,11 @@ class test_hoc(unittest.TestCase):
     data_file_name = "Preprocessed Data/small_network.npy"
     adj_matrix = np.load(data_file_name).item()
     max_cycle_order = 5
-    network_name = "small"
 
     #should just predict mode label of 1 because features are random noise
     #so only positives and some are false
     avg_acc, avg_fpr = hoc_prediction.hoc_learning_pipeline(adj_matrix, 
-                      network_name, max_cycle_order, num_folds = 5, num_features = 0)
+                      max_cycle_order, num_folds = 5, num_features = 0)
 
 #Test machine learning pipeline for generic k-fold cross validation (on graph data)
 class test_ml_pipeline(unittest.TestCase):

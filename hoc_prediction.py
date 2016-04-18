@@ -2,7 +2,7 @@
 #Based on Chiang et. al, 2014
 
 import numpy as np
-import cPickle
+import cPickle, time
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import svds
 from scipy.linalg import norm
@@ -12,16 +12,18 @@ import hoc_edge_features as hoc
 import ml_pipeline as pipeline
 import random, os
 import simulate_networks as sim
+import analytics
 
 #Perform cross validation, testing on one fold and training on the rest
 #Input: adjacency matrix
 #       indices of data points in each folds
 #       Features, labels to learn from
 #Output: average test accuracy, false positive rate
-def kfold_CV(adj_matrix, folds, num_features = -1):
+def kfold_CV(adj_matrix, folds, max_cycle_order, num_features = -1):
   num_folds = len(folds)
-  accuracy = 0
-  false_positive_rate = 0
+  accuracy_fold_data = list()
+  false_positive_rate_fold_data = list()
+  time_fold_data = list()
   for fold_index in range(num_folds):
     print("Fold %d:" % (fold_index + 1))
 
@@ -33,29 +35,35 @@ def kfold_CV(adj_matrix, folds, num_features = -1):
     train_row_indices, train_col_indices = zip(*train_points)
     test_row_indices, test_col_indices = zip(*test_points)
     train_labels = adj_matrix[train_row_indices, train_col_indices].A[0] #array of signs of training edges
+    test_labels = adj_matrix[test_row_indices, test_col_indices].A[0] #array of signs of test edges
 
     #construct matrix using just training edges
     train_matrix = csr_matrix((train_labels, (train_row_indices, train_col_indices)), shape = adj_matrix.shape)
     train_matrix = (train_matrix + train_matrix.transpose()).sign() #make symmetric
-    feature_products = hoc.extract_edge_features(train_matrix, "whatever", max_cycle_order = 4)
+
+    #Compute feature products
+    #This dominates the training time, so report time for only this part for experiments
+    before_train = time.time()
+    feature_products = hoc.extract_edge_features(train_matrix, max_cycle_order)
 
     #get features and labels corresponding to each data point
     train_data = np.asarray([hoc.extract_features_for_edge(feature_products, tr_point) for tr_point in train_points])
-    train_labels = adj_matrix[train_row_indices, train_col_indices].A[0] #array of signs of training edges
     test_data = np.asarray([hoc.extract_features_for_edge(feature_products, te_point) for te_point in test_points])
-    test_labels = adj_matrix[test_row_indices, test_col_indices].A[0] #array of signs of test edges
+    after_train = time.time()
+    model_time = after_train - before_train
 
-    if num_features > 0:
+    #if, for experimental reasons, we don't want to train on all the features instead
+    #as a diagnostic for what the model is actually learning and why
+    if num_features > 0: #perform feature selection
       feat_sel = SelectKBest(f_classif, k=num_features)
       feat_sel.fit(train_data, train_labels)
       train_data = feat_sel.transform(train_data)
       test_data = feat_sel.transform(test_data)
-
     elif num_features == 0: #train on random features
       print "train data: random matrix of shape ", train_data.shape
       train_data = np.random.random(train_data.shape)
     
-    print "number of features: ", train_data.shape[1]
+    #print "number of features: ", train_data.shape[1]
 
     #train logistic regression classifier
     clf = LogisticRegression()
@@ -64,15 +72,13 @@ def kfold_CV(adj_matrix, folds, num_features = -1):
     #Evaluate
     test_preds = clf.predict(test_data)
 
-    #average prediction/label tells you what min and max are 
-    #(if it's strictly between -1 and 1 there are both positive and negatives)
     acc, fpr = pipeline.evaluate(test_preds, test_labels)
-    accuracy += acc
-    false_positive_rate += fpr
+    accuracy_fold_data.append(acc)
+    false_positive_rate_fold_data.append(fpr)
+    print "HOC feature extraction time for one fold: ", model_time
+    time_fold_data.append(model_time)
 
-  accuracy = accuracy / num_folds
-  false_positive_rate = false_positive_rate/num_folds
-  return accuracy, false_positive_rate
+  return accuracy_fold_data, false_positive_rate_fold_data, time_fold_data
 
 #Machine learning pipeline for prediction using HOC features
 #Feature extraction to model training and usage
@@ -82,41 +88,20 @@ def kfold_CV(adj_matrix, folds, num_features = -1):
 #       Number of folds for k-fold cross validation (default 10 like in the paper)
 #       Number of features to use (to test whether classifier is actually learning)
 #Output: average accuracy, false positive rate across folds
-def hoc_learning_pipeline(adj_matrix, dataset_name, max_cycle_order, num_folds=10, num_features=-1):
-  #Get data
-  features_dict, labels_dict = ({},{})#hoc.extract_edge_features(adj_matrix, dataset_name, max_cycle_order, dataset_name)
-  #print "number of features calculated: ", len(features_dict[features_dict.keys()[0]])
-
-  #for key in features_dict.keys():
-  #  features_dict[key] = features_dict[key][11:12]
-
-  #completely randomize the features
-  #NOTE: with this test, classifier should just predict mode label
-  if num_features == 0:
-    for key in features_dict.keys():
-      features_dict[key] = list(np.random.random(len(features_dict[key])))
-
-  #choose only a subset of the features to learn from
-  #note: fewer features (e.g. 4) --> classifier always predicts mode label
-
+def hoc_learning_pipeline(adj_matrix, max_cycle_order, num_folds=10, num_features=-1):
   #Split into folds
-  unique_edge_list = get_unique_edges(adj_matrix)
+  unique_edge_list = pipeline.get_unique_edges(adj_matrix)
   data_folds = pipeline.kfold_CV_split(unique_edge_list, num_folds)
 
   #Perform k-fold cross validation
-  avg_accuracy, avg_false_positive_rate = kfold_CV(adj_matrix, data_folds, num_features)
-  return avg_accuracy, avg_false_positive_rate
-
-#get unique edges in adjacency matrix
-def get_unique_edges(adj_matrix):
-  rows,cols = adj_matrix.nonzero()
-  unique_edges = set()
-  for edge_index in range(len(rows)):
-    edge = (rows[edge_index],cols[edge_index])
-    if edge not in unique_edges and edge[::-1] not in unique_edges:
-      unique_edges.add(edge)
-  unique_edge_list = list(unique_edges)
-  return unique_edge_list
+  acc_fold_data, fpr_fold_data, time_fold_data = kfold_CV(adj_matrix, data_folds, max_cycle_order, num_features)
+  avg_acc = sum(acc_fold_data) / float(len(acc_fold_data))
+  avg_fpr = sum(fpr_fold_data) / float(len(fpr_fold_data))
+  avg_time = sum(time_fold_data) / float(len(time_fold_data))
+  acc_stderr = analytics.error_width(analytics.sample_std(acc_fold_data), num_folds)
+  fpr_stderr = analytics.error_width(analytics.sample_std(fpr_fold_data), num_folds)
+  time_stderr = analytics.error_width(analytics.sample_std(time_fold_data), num_folds)
+  return avg_acc, acc_stderr, avg_fpr, fpr_stderr, avg_time, time_stderr
 
 if __name__ == "__main__":
   #data_file_name = "Preprocessed Data/wiki_elections_csr.npy"
@@ -138,7 +123,8 @@ if __name__ == "__main__":
 
   num_folds = 10
   num_features = -1
-  avg_accuracy, avg_false_positive_rate = hoc_learning_pipeline(adj_matrix, dataset_name, max_cycle_order, num_folds, num_features)
-  print "Average accuracy: ", avg_accuracy
-  print "Average false positive rate: ", avg_false_positive_rate
+  avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = hoc_learning_pipeline(adj_matrix, max_cycle_order, num_folds, num_features)
+  print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
+  print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
+  print("Model running time: average %f with standard error %f" % (avg_time, stderr_time))
 

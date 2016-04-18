@@ -3,11 +3,12 @@
 
 import svp_sign_prediction as svp
 import matrix_factorization as mf
-import logging
+import logging, time
 
 import numpy as np
 from scipy.sparse import csr_matrix
 import ml_pipeline as pipeline
+import analytics
 
 #k fold cross validation for matrix completion problems
 # Input: adjacency matrix
@@ -24,8 +25,9 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
   print "got folds"
 
   #keep track of accuracy, false positive rate
-  accuracy = 0
-  false_positive_rate = 0
+  accuracy_fold_data = list()
+  false_positive_rate_fold_data = list()
+  time_fold_data = list()
 
   #perform learning problem on each fold
   for fold_index in range(num_folds):
@@ -43,7 +45,10 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
     test_labels = adj_matrix[test_row_indices, test_col_indices].A[0] #array of signs of test edges
 
     #perform learning on training matrix
+    before_train = time.time()
     train_complet = matrix_completion(adj_matrix, alg, alg_params)
+    after_train = time.time()
+    model_time = after_train - before_train
 
     #WRITETEST to make sure this is same shape as adj matrix
     print train_complet.shape
@@ -51,13 +56,17 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
     preds = train_complet[test_row_indices, test_col_indices]
 
     acc, fpr = pipeline.evaluate(preds, test_labels)
-    accuracy += acc
-    false_positive_rate += fpr
+    accuracy_fold_data.append(acc)
+    false_positive_rate_fold_data.append(fpr)
+    time_fold_data.append(model_time)
 
-  #Return average accuracy and false positive rate
-  accuracy = accuracy / num_folds
-  false_positive_rate = false_positive_rate/num_folds
-  return accuracy, false_positive_rate
+  avg_acc = sum(accuracy_fold_data) / float(len(accuracy_fold_data))
+  avg_fpr = sum(false_positive_rate_fold_data) / float(len(false_positive_rate_fold_data))
+  avg_time = sum(time_fold_data) / float(len(time_fold_data))
+  acc_stderr = analytics.error_width(analytics.sample_std(accuracy_fold_data), num_folds)
+  fpr_stderr = analytics.error_width(analytics.sample_std(false_positive_rate_fold_data), num_folds)
+  time_stderr = analytics.error_width(analytics.sample_std(time_fold_data), num_folds)
+  return avg_acc, acc_stderr, avg_fpr, fpr_stderr, avg_time, time_stderr
 
 #Matrix completion with matrix factorization
 #Input: matrix to complete
@@ -85,7 +94,7 @@ def matrix_completion(matrix, alg, params):
       raise ValueError("invalid number or type of input for SGD?")
   elif alg == "als":
     try:
-      max_iter, dim = alg_params
+      max_iter, dim = params
       factor1, factor2 = mf.matrix_factor_ALS(matrix, dim, max_iter)
       completed_matrix = csr_matrix.sign(csr_matrix(factor1.transpose()*factor2))
     except:
@@ -150,6 +159,7 @@ if __name__ == "__main__":
     alg_params = (max_iter, dim)
     alg = "als"
 
-  avg_accuracy, avg_false_positive_rate = kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds)
-  print "Average accuracy: ", avg_accuracy
-  print "Average false positive rate: ", avg_false_positive_rate
+  avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds)
+  print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
+  print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
+  print("Model running time: average %f with standard error %f" % (avg_time, stderr_time))
