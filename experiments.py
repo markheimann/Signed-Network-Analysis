@@ -6,29 +6,26 @@
 from scipy.sparse import csr_matrix
 import numpy as np 
 
-import simulate_networks as sim
-import local_moi as moi 
-import hoc_prediction as hoc
-import matrix_prediction as mf
-import clustering as clust
-import analytics
+import data.simulate_networks as sim
+import local_prediction.local_moi as moi 
+import local_prediction.hoc_prediction as hoc
+import matrix_completion.matrix_prediction as mf
+import cluster.clustering as clust
+import analytics.stats as stats
 
 import time
 
-#TODO: timing
-#TODO: standard error
-
 #Run experiments on different algorithms on the same network
 def run_experiment():
-  simulated = True
-  real = False
+  simulated = False
+  real = True
 
-  use_moi = False
+  use_moi = True
   use_hoc = True
-  use_svp = False
+  use_svp = True
   use_sgd_sh = False
   use_sgd_sig = False
-  use_als = False
+  use_als = True
 
   adj_matrix = None
   if simulated:
@@ -39,8 +36,8 @@ def run_experiment():
     adj_matrix = sim.sample_network(cluster_sizes, sparsity_level, noise_prob)
 
   elif real:
-    data_file_name = "Preprocessed Data/small_network.npy"
-    data_file_name = "Preprocessed Data/wiki_elections_csr.npy"
+    data_file_name = "data/Preprocessed Data/small_network.npy"
+    #data_file_name = "data/Preprocessed Data/wiki_elections_csr.npy"
     try:
       adj_matrix = np.load(data_file_name).item()
     except Exception as e:

@@ -4,14 +4,14 @@ import unittest
 import numpy as np
 from scipy.sparse import csr_matrix
 
-import svp_sign_prediction as svp
-import hoc_edge_features as hoc_features
-import hoc_prediction
-import preprocess_ES
-import preprocess_W
-import ml_pipeline as pipeline
-import simulate_networks as sim
-import clustering
+import matrix_completion.svp_sign_prediction as svp
+import local_prediction.hoc_edge_features as hoc_features
+import local_prediction.hoc_prediction as hoc_prediction
+import data.preprocess_ES
+import data.preprocess_W
+import utils.ml_pipeline as pipeline
+import data.simulate_networks as sim
+import cluster.clustering
 
 class test_preprocess(unittest.TestCase):
   #test preprocessing of wikipedia dataset
