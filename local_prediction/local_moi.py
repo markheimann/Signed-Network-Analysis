@@ -3,8 +3,7 @@
 #Based on Chiang et. al, 2014
 
 import numpy as np
-from scipy.sparse import csr_matrix, identity
-from scipy.sparse.linalg import svds, inv
+import scipy.sparse as sp
 from scipy.linalg import norm
 import cPickle, os, time
 import utils.ml_pipeline as pipeline
@@ -48,10 +47,10 @@ def get_prediction_matrices(adj_matrix, discount_factor, max_cycle_order):
   if max_cycle_order == np.inf: #compute signed Katz measure
     if type(discount_factor) is not float:
       raise ValueError("discount factor must be float") #TODO must be sufficiently small (< ||A||_2) too? 
-    prediction_matrix = identity(adj_matrix.shape[0])
+    prediction_matrix = sp.identity(adj_matrix.shape[0])
     prediction_matrix = prediction_matrix - discount_factor * adj_matrix
-    prediction_matrix = inv(prediction_matrix)
-    prediction_matrix = prediction_matrix - identity(adj_matrix.shape[0])
+    prediction_matrix = sp.linalg.inv(prediction_matrix)
+    prediction_matrix = prediction_matrix - sp.identity(adj_matrix.shape[0])
     prediction_matrix = prediction_matrix - discount_factor * adj_matrix
     return prediction_matrix
   else:
@@ -62,7 +61,7 @@ def get_prediction_matrices(adj_matrix, discount_factor, max_cycle_order):
     #Compute if needed
     products = list()
     #'''
-    current_product = csr_matrix(adj_matrix)
+    current_product = sp.csr_matrix(adj_matrix)
     order = 3
     while order <= max_cycle_order:
       highest_power_product = None
@@ -98,7 +97,7 @@ def kfoldcv_moi(adj_matrix, discount, max_cycle_order, num_folds = 10):
     test_labels = adj_matrix[test_row_indices, test_col_indices].A[0] #array of signs of test edges
 
     #construct matrix using just training edges
-    train_matrix = csr_matrix((train_labels, (train_row_indices, train_col_indices)), shape = adj_matrix.shape)
+    train_matrix = sp.csr_matrix((train_labels, (train_row_indices, train_col_indices)), shape = adj_matrix.shape)
     train_matrix = (train_matrix + train_matrix.transpose()).sign() #make symmetric
 
     #Make predictions

@@ -1,17 +1,16 @@
 #Simulate signed networks
 #Based on Chiang et. al, 2014
 import numpy as np
-from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import svds
+import scipy.sparse as sp
 from scipy.linalg import norm
 from scipy.stats import powerlaw
 
-#Input: list of sizes of each cluster
-#   sparsity level (percentage of edges to sample)
-#   noise level (probability sample edge sign is flipped)
-#   whether or not to make the matrix symmetric
-#   sampling process (uniform or power law)
-#Output: noisy sampled network
+#Input: list of sizes of each cluster [list]
+#   sparsity level (percentage of edges to sample) [float 0-1]
+#   noise level (probability sample edge sign is flipped) [float 0-1]
+#   whether or not to make the matrix symmetric [boolean]
+#   sampling process [str "uniform" or "power_law"]
+#Output: noisy sampled network [sparse csr matrix]
 #(optional) TODO: power law sampling
 def sample_network(cluster_sizes, 
                    sparsity_level, 
@@ -43,10 +42,11 @@ def sample_network(cluster_sizes,
   data = np.asarray([get_complete_balanced_network_edge_sign(cluster_sizes, edge) for edge in edges])
   
   #Make data noisy: 1s are true, -1s are noise
-  noise = 2 * (np.random.random(num_samples) > noise_prob) - 1 #1 if entry should be sampled correctly, -1 otherwise
+  #1 if entry should be sampled correctly, -1 otherwise
+  noise = 2 * (np.random.random(num_samples) > noise_prob) - 1
   data = data * noise
 
-  sampled_network = csr_matrix((data, (rows, cols)), shape = (network_dimension, network_dimension))
+  sampled_network = sp.csr_matrix((data, (rows, cols)), shape = (network_dimension, network_dimension))
   if symmetric:
     sampled_network = (sampled_network + sampled_network.transpose()).sign() #make symmetric
   return sampled_network
@@ -56,9 +56,9 @@ def sample_network(cluster_sizes,
 #That way we can sample 2D edges from a 1D array
 #Basically, we are implicitly un-flattening an array
 
-#Input: index to convert to 2D
-#       matrix dimension size (num rows/cols in square matrix)
-#Output: 2D coordinate to which that index maps
+#Input: index to convert to 2D [int]
+#       matrix dimension size (num rows/cols in square matrix) [int]
+#Output: 2D coordinate to which that index maps [tuple of 2 ints]
 def get_edge_from_index(index, matrix_dim_size):
   if index < 0 or index >= matrix_dim_size**2:
     raise ValueError("index out of matrix range")
@@ -70,8 +70,8 @@ def get_edge_from_index(index, matrix_dim_size):
 #   within cluster edges positive, between cluster edges negative
 #Avoid explicitly creating the complete matrix in case it's very big
 #In paper set k = 5 with 100 nodes per cluster
-#   how many nodes to each cluster
-#   edge to get sign of
+#   how many nodes to each cluster [list of ints]
+#   edge to get sign of [2-tuple of ints]
 #Output: sign of desired edge
 def get_complete_balanced_network_edge_sign(cluster_sizes, edge):
   #note: balanced network is basically blocks of 1s on the diagonal, -1s everywhere else
@@ -92,7 +92,7 @@ def get_complete_balanced_network_edge_sign(cluster_sizes, edge):
     if row_in_cluster and col_in_cluster: #we've found edge and in cluster
       sign = 1
       break
-    #exclusive or: row is in this cluster range but column is not (so edge is not in a cluster)
+    #exclusive or: row is in this cluster range but column isn't (so edge not in a cluster)
     elif row_in_cluster ^ col_in_cluster: #we've found edge and not in cluster
       break #leave sign -1
     else:
@@ -101,8 +101,8 @@ def get_complete_balanced_network_edge_sign(cluster_sizes, edge):
 
 #Construct a complete network explicitly
 #Mainly used for small examples for testing
-#Input: cluster sizes
-#Output: adjacency matrix of complete network
+#Input: cluster sizes [list of ints]
+#Output: adjacency matrix of complete network [sparse csr matrix]
 def construct_full_network(cluster_sizes):
   network_size = sum(cluster_sizes)
 
@@ -120,5 +120,5 @@ def construct_full_network(cluster_sizes):
   #give appropriate shape
   np_full_network = np_full_network_edges.reshape(network_size,network_size)
   #convert to CSR matrix
-  sim_full_network = csr_matrix(np_full_network)
+  sim_full_network = sp.csr_matrix(np_full_network)
   return sim_full_network

@@ -155,8 +155,7 @@ if __name__ == "__main__":
     #data_file_name = "Preprocessed Data/small_network.npy"
     data_file_name = "../data/Preprocessed Data/wiki_elections_csr.npy"
     try:
-      #note: exc_bad_access when computing pinv with entire network matrix
-      adj_matrix = np.load(data_file_name).item()[:1000,:1000]
+      adj_matrix = np.load(data_file_name).item()
     except Exception as e:
       raise ValueError("could not load adj matrix from file: ", e)
 

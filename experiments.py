@@ -3,7 +3,6 @@
 #Select methods
 #Study performance of all methods on the network
 
-from scipy.sparse import csr_matrix
 import numpy as np 
 
 import data.simulate_networks as sim
@@ -50,7 +49,8 @@ def run_experiment():
     #max_cycle_order_moi = np.inf
     #discount = 0.0001
     num_folds = 5
-    avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = moi.kfoldcv_moi(adj_matrix, discount, max_cycle_order_moi, num_folds)
+    avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = \
+          moi.kfoldcv_moi(adj_matrix, discount, max_cycle_order_moi, num_folds)
     print "MOI results: "
     print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
     print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
@@ -61,7 +61,8 @@ def run_experiment():
     print "performing HOC..."
     max_cycle_order_hoc = 5
     num_folds = 10
-    avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = hoc.hoc_learning_pipeline(adj_matrix, max_cycle_order_hoc)
+    avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = \
+              hoc.hoc_learning_pipeline(adj_matrix, max_cycle_order_hoc)
     print "HOC results:"
     print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
     print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
@@ -90,7 +91,8 @@ def run_experiment():
       alg = "sgd"
       
       print "performing SGD with square-hinge loss..."
-      avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
+      avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = \
+              mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
       print "SGD_SH results:"
       print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
       print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
@@ -102,7 +104,8 @@ def run_experiment():
       alg = "sgd"
       
       print "performing SGD with sigmoid loss..."
-      avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
+      avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = \
+              mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
       print "SGD_SIG results:"
       print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
       print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
@@ -121,7 +124,8 @@ def run_experiment():
     num_folds_mf = 10
 
     print "performing ALS..."
-    avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
+    avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = \
+            mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
     print "ALS results:"
     print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
     print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
@@ -143,7 +147,8 @@ def run_experiment():
     num_folds_mf = 10
     
     print "performing SVP..."
-    avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
+    avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = \
+          mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
     print "SVP results:"
     print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
     print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))

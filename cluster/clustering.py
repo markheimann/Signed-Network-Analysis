@@ -1,9 +1,8 @@
 #Clustering algorithms for signed networks
 #Based on Chiang et. al, 2014
 
-from scipy.sparse import csr_matrix, diags
+import scipy.sparse as sp
 from scipy.linalg import eig, cholesky, LinAlgError
-from scipy.sparse.linalg import eigs
 import numpy as np
 import logging, time
 
@@ -18,29 +17,31 @@ import analytics.stats as stats
 from scipy.sparse.linalg.eigen.arpack.arpack import ArpackError
 
 #Perform matrix clustering
-#Try to find clusterings such that within-cluster edges are 1 and between-cluster edges are -1
-#Input: adjacency matrix
-#       number of clusters
-#       method to use ("signed laplacian" from previous work, or "matrix completion" from this paper)
-#       completion algorithm (if doing matrix completion)
+#Try to find clusterings such that within-cluster edges are 1
+# and between-cluster edges are -1
+#Input: adjacency matrix [scipy sparse csr matrix]
+#       number of clusters [int]
+#       method to use [str: "signed laplacian", "matrix completion"]
+#       completion algorithm [str] (if doing matrix completion)
 #       params for completion algorithm (if doing matrix completion)
-#Output: vector of cluster indicators for each row/column (person) in adjacency matrix
-def cluster_signed_network(adj_matrix, cluster_sizes, method, completion_alg=None, params=None, mode="normal"):
+#         [tuple of all parameters for completion algorithm besides adj matrix]
+#Output: vector of cluster indicators for each row/col in adjacency matrix [np array]
+def cluster_signed_network(adj_matrix, 
+                            cluster_sizes, 
+                            method, 
+                            completion_alg=None, 
+                            params=None, mode="normal"):
   cluster_matrix = None #matrix whose eigenvectors to perform clustering on top of
   num_clusters = len(cluster_sizes)
   method = method.lower()
 
-  #print adj_matrix.A
-  #print
   if method == "signed laplacian":
-    cluster_matrix = kernel.signed_laplacian(adj_matrix)#sl_diag_matrix - adj_matrix #signed Laplacian
+    cluster_matrix = kernel.signed_laplacian(adj_matrix)
     if mode == "test": #test to make sure signed Laplacian is positive semidefinite
       try:
         chol = cholesky(cluster_matrix.A)
       except LinAlgError:
         raise ValueError("Cholesky failed, so signed Laplacian is not PSD...")
-    #print cluster_matrix.A
-    #print
   elif method == "matrix completion":
     completion_alg == completion_alg.lower()
 
@@ -55,15 +56,16 @@ def cluster_signed_network(adj_matrix, cluster_sizes, method, completion_alg=Non
     elif completion_alg == "sgd":
       try:
         learning_rate, loss_type, tol, max_iters, regularization_param, dim = params
-        factor1, factor2 = mf.matrix_factor_SGD(adj_matrix, learning_rate, loss_type, tol, max_iters, regularization_param, dim)
-        cluster_matrix = csr_matrix.sign(csr_matrix(factor1*factor2.transpose()))
+        factor1, factor2 = mf.matrix_factor_SGD(adj_matrix, learning_rate, \
+                                loss_type, tol, max_iters, regularization_param, dim)
+        cluster_matrix = sp.csr_matrix.sign(sp.csr_matrix(factor1*factor2.transpose()))
       except:
         raise ValueError("check input for SGD")
     elif completion_alg == "als":
       try: 
         dim, num_iters = params
         factor1, factor2 = mf.matrix_factor_ALS(adj_matrix, dim, num_iters)
-        cluster_matrix = csr_matrix.sign(csr_matrix(factor1.transpose()*factor2))
+        cluster_matrix = sp.csr_matrix.sign(sp.csr_matrix(factor1.transpose()*factor2))
       except:
         logging.exception()
         raise ValueError("check input for ALS")
@@ -86,13 +88,13 @@ def cluster_signed_network(adj_matrix, cluster_sizes, method, completion_alg=Non
   print cluster_matrix.shape
   cluster_matrix = cluster_matrix.asfptype()
   try:
-    eigenvals, top_eigenvecs = eigs(cluster_matrix, k=num_clusters)
-  except ArpackError: #happens when adj matrix is complete sparse matrix with 5 clusters of size 5(???)
+    eigenvals, top_eigenvecs = sp.linalg.eigs(cluster_matrix, k=num_clusters)
+  #happens when adj matrix is complete sparse matrix with 5 clusters of size 5(???)
+  except ArpackError:
     eigenvals, eigenvecs = eig(cluster_matrix.A)
     top_eigenvecs = eigenvecs[:,:num_clusters]
   if mode == "test":
     assert top_eigenvecs.shape == (adj_matrix.shape[0], num_clusters)
-  #print top_eigenvecs
 
   #Perform k-means clustering on top k eigenvectors
   clusters = KMeans(n_clusters = num_clusters)
@@ -118,23 +120,25 @@ def clustering_pipeline(network_params, clustering_params):
   network = sim.sample_network(cluster_sizes, sparsity, noise_prob)
   rows, cols = network.nonzero()
   
-  #Assign ground truth labels (the first "cluster_size" are in cluster 0, next are in cluster 1, etc.)
+  #Assign ground truth labels (the first "cluster_size" are in cluster 0, 
+  #next are in cluster 1, etc.)
   cluster_labels = list()
-  #for cluster_num in range(num_clusters):
   for cluster_index in range(len(cluster_sizes)):
     cluster_labels += [cluster_index] * cluster_sizes[cluster_index]
   cluster_labels = np.asarray(cluster_labels)
 
   #perform clustering
   cluster_sizes, method, completion_alg, completion_params, mode = clustering_params  
-  cluster_predictions = cluster_signed_network(network, cluster_sizes, method, completion_alg, completion_params, mode)
-  cluster_accuracy = evaluate_cluster_accuracy(cluster_predictions, cluster_labels, rows, cols)
+  cluster_predictions = cluster_signed_network(network, cluster_sizes, method, \
+                            completion_alg, completion_params, mode)
+  cluster_accuracy = evaluate_cluster_accuracy(cluster_predictions, cluster_labels, \
+                            rows, cols)
   return cluster_accuracy
 
 #Evaluate clustering accuracy
-#Input: predicted cluster labels
-#       ground truth cluster assignments
-#       rows, cols of edges in the graph
+#Input: predicted cluster labels [np array]
+#       ground truth cluster assignments [np array]
+#       rows, cols of edges in the graph [both lists]
 #Output: proportion of correctly clustered
 def evaluate_cluster_accuracy(cluster_predictions, cluster_labels, rows, cols):
   num_correctly_clustered = 0
@@ -173,13 +177,15 @@ if __name__ == "__main__":
     sl_completion_alg = None
     sl_completion_params = None
 
-    sl_clustering_params = (cluster_sizes, sl_method, sl_completion_alg, sl_completion_params, mode)
+    sl_clustering_params = (cluster_sizes, sl_method, sl_completion_alg, \
+                              sl_completion_params, mode)
     before_sl_cluster = time.time()
     sl_cluster_accuracy = clustering_pipeline(network_params, sl_clustering_params)
     after_sl_cluster = time.time()
     print "Clustering results with signed Laplacian: "
     print "Clustering accuracy: ", sl_cluster_accuracy
-    print "Clustering standard error: ", stats.error_width(stats.sample_std(sl_cluster_accuracy), sum(cluster_sizes))
+    print "Clustering standard error: ", 
+    print stats.error_width(stats.sample_std(sl_cluster_accuracy), sum(cluster_sizes))
     print "Clustering running time: ", after_sl_cluster - before_sl_cluster
   if use_mf:
     mf_method = "matrix completion"
@@ -196,7 +202,8 @@ if __name__ == "__main__":
     after_mf_cluster = time.time()
     print "Clustering results with matrix completion: "
     print "Clustering accuracy: ", mf_cluster_accuracy
-    print "Clustering standard error: ", stats.error_width(stats.sample_std(mf_cluster_accuracy), sum(cluster_sizes))
+    print "Clustering standard error: ",
+    print stats.error_width(stats.sample_std(mf_cluster_accuracy), sum(cluster_sizes))
     print "Clustering running time: ", after_mf_cluster - before_mf_cluster
 
 

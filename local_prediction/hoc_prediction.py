@@ -3,8 +3,7 @@
 
 import numpy as np
 import cPickle, time
-from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import svds
+import scipy.sparse as sp
 from scipy.linalg import norm
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_selection import SelectKBest, f_classif
@@ -40,7 +39,7 @@ def kfold_CV(adj_matrix, folds, max_cycle_order, num_features = -1):
     test_labels = adj_matrix[test_row_indices, test_col_indices].A[0] #array of signs of test edges
 
     #construct matrix using just training edges
-    train_matrix = csr_matrix((train_labels, (train_row_indices, train_col_indices)), shape = adj_matrix.shape)
+    train_matrix = sp.csr_matrix((train_labels, (train_row_indices, train_col_indices)), shape = adj_matrix.shape)
     train_matrix = (train_matrix + train_matrix.transpose()).sign() #make symmetric
 
     #Compute feature products

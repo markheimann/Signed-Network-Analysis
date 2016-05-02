@@ -2,8 +2,10 @@
 '''Take in text file of data, create and save adjacency matrix'''
 
 import numpy as np, pickle
-from scipy.sparse import csr_matrix
+import scipy.sparse as sp
 
+#Preprocess data
+#Optionally run normally or in test mode (when writing tests)
 def preprocess(mode = "normal"):
   FILE_PATH = "Raw Data/soc-sign-epinions.txt"
   #FILE_PATH = "Raw Data/soc-sign-Slashdot090221.txt"
@@ -34,7 +36,7 @@ def preprocess(mode = "normal"):
 
     #Create in sparse row-major format
     #Note: ID starts at 0 so number of people is 1 more than max ID
-    data_matrix = csr_matrix((np.array(labels), (np.array(from_data), 
+    data_matrix = sp.csr_matrix((np.array(labels), (np.array(from_data), 
                   np.array(to_data)) ), shape=(max_id + 1, max_id + 1))
 
     #correction to make data matrix symmetric

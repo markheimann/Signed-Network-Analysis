@@ -5,7 +5,7 @@
 
 import numpy as np
 import cPickle
-from scipy.sparse import csr_matrix, find
+import scipy.sparse as sp
 from scipy.sparse.linalg import svds
 from scipy.linalg import norm
 import os
@@ -25,12 +25,12 @@ def extract_edge_features(adj_matrix, max_cycle_order, mode="normal"):
     raise ValueError("adjacency matrix is not symmetric")
 
   #Form positive and negative components of adjacency matrix
-  positive_indices = find(adj_matrix == 1)
-  negative_indices = find(adj_matrix == -1)
+  positive_indices = sp.find(adj_matrix == 1)
+  negative_indices = sp.find(adj_matrix == -1)
   ones = np.ones(positive_indices[0].size)
   negative_ones = -1 * np.ones(negative_indices[0].size)
-  adj_pos_component = csr_matrix((ones, (positive_indices[0], positive_indices[1])), shape = adj_matrix.shape)
-  adj_neg_component = csr_matrix((negative_ones, (negative_indices[0], negative_indices[1])), shape = adj_matrix.shape)
+  adj_pos_component = sp.csr_matrix((ones, (positive_indices[0], positive_indices[1])), shape = adj_matrix.shape)
+  adj_neg_component = sp.csr_matrix((negative_ones, (negative_indices[0], negative_indices[1])), shape = adj_matrix.shape)
 
   #For easy indexing of which component we want to work with
   #NOTE: we are considering only undirected graphs so transpose is the same 
@@ -79,7 +79,7 @@ def compute_feature_products(components, max_cycle_order, products = None):
   new_products = list()
   for product in max_components: #products[max_length]:
     for new_product_term in components:
-      new_product = csr_matrix(product) #shallow copy of product
+      new_product = sp.csr_matrix(product) #shallow copy of product
       new_product = new_product.dot(new_product_term) #multiply by another component
       new_products.append(new_product)
   products[max_length + 1] = new_products #next order higher matrix features

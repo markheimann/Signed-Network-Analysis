@@ -6,10 +6,10 @@ import math
 
 #Compute width of confidence interval
 #or just standard error
-#Input: sample standard deviation
-#number of items in sample
-#confidence level (if want a CI width not just standard error)
-#Output: width of confidence interval (on 1 side of the mean)
+#Input: sample standard deviation [float]
+#number of items in sample [int]
+#confidence level (if want a CI width not just standard error) [float 0-1]
+#Output: width of confidence interval (on 1 side of the mean) [float]
 #  or standard error
 def error_width(sample_std, num_items, confidence_level=None):
   std_err = sample_std / math.sqrt(num_items)
@@ -22,10 +22,10 @@ def error_width(sample_std, num_items, confidence_level=None):
   return ci_width
 
 #Compute sample standard deviation
-#Input: list to compute standard deviation of
-#   OR single number between 0 and 1, the mean of a binary RV
+#Input: list to compute standard deviation of [list]
+#   OR the mean of a binary RV [float 0-1]
 #   (e.g. ML classification results)
-#Output: sample standard deviation
+#Output: sample standard deviation [float]
 def sample_std(sample):
   variance = None
   if type(sample) is float:

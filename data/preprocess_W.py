@@ -2,7 +2,7 @@
 '''Take in text file of data, create and save adjacency matrix'''
 
 import numpy as np, cPickle
-from scipy.sparse import csr_matrix
+import scipy.sparse as sp
 
 
 
@@ -70,7 +70,7 @@ def preprocess(mode = "normal"):
     col_ind = np.array(to_data)
     M = max_id
     N = max_id
-    data_matrix = csr_matrix((data, (row_ind, col_ind)), shape=(M, N)).sign()
+    data_matrix = sp.csr_matrix((data, (row_ind, col_ind)), shape=(M, N)).sign()
 
     #Correction to make matrix symmetric (from paper)
     if (data_matrix != data_matrix.transpose()).nnz > 0: #data matrix is not symmetric

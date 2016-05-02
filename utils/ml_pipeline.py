@@ -3,17 +3,15 @@
 
 import numpy as np
 import cPickle
-from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import svds
 from scipy.linalg import norm
 from sklearn.linear_model import LogisticRegression
 import random
 
 #Split data into folds for cross-validation
-#Input: edges in dataset (we have dictionaries indexing these to features and labels)
-#       Number of folds (k in k-fold cross validation)
+#Input: edges in dataset [list of 2-tuples]
+#       Number of folds (k in k-fold cross validation) [int]
 #Output: k disjoint sets of vertices whose 
-#union is the set of all edges (nonzero entries in matrix)
+#union is the set of all edges (nonzero entries in matrix) [list of lists]
 def kfold_CV_split(data_points, num_folds=10):
   random.shuffle(data_points) #shuffle data points into random order
   fold_size = len(data_points)/num_folds
@@ -26,9 +24,9 @@ def kfold_CV_split(data_points, num_folds=10):
   return folds
 
 #Join folds other than the one use for testing to construct training dataset
-#Input: all folds
-# Index of fold to leave out
-#Output: List of training points (all other folds)
+#Input: all folds [list of lists]
+# Index of fold to leave out [int]
+#Output: List of training points (all other folds) [list]
 def join_folds(folds, fold_to_leave_out):
   initial_fold_number = 0
   if fold_to_leave_out == 0:
@@ -45,10 +43,10 @@ def join_folds(folds, fold_to_leave_out):
   return data
 
 #Given test predictions and labels, evaluate metrics like accuracy
-#Input: predictions
-#       labels
-#Output: accuracy
-#       false positive rate
+#Input: predictions [np array]
+#       labels [np array]
+#Output: accuracy [float 0-1]
+#       false positive rate [float 0-1]
 #Action: print diagnostics too
 def evaluate(predictions, labels):
   #average prediction tells you if mostly one label predicted
@@ -70,6 +68,8 @@ def evaluate(predictions, labels):
   return accuracy, false_positive_rate
 
 #get unique edges in adjacency matrix
+#Input: adjacency matrix [sparse csr matrix]
+#Output: list of unique edges [list of 2-tuples of ints]
 def get_unique_edges(adj_matrix):
   rows,cols = adj_matrix.nonzero()
   unique_edges = set()

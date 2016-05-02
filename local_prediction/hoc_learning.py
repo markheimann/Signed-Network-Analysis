@@ -3,8 +3,6 @@
 
 import numpy as np
 import cPickle
-from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import svds
 from scipy.linalg import norm
 from sklearn.linear_model import LogisticRegression
 import hoc_edge_features as hoc
