@@ -1,0 +1,5 @@
+Python (2.7.10)
+NumPy (1.8.0rc1)
+SciPy (0.13.0b1)
+Scikit-learn (0.16.1)
+cPickle (1.71)

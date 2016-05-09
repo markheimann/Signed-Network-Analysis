@@ -2,7 +2,7 @@
 
 import unittest
 import numpy as np
-from scipy.sparse import csr_matrix
+import scipy.sparse as sp
 
 import matrix_completion.svp_sign_prediction as svp
 import local_prediction.hoc_edge_features as hoc_features
@@ -33,10 +33,10 @@ class test_hoc(unittest.TestCase):
 
   #Test recursive algorithm to compute feature matrix products
   def test_compute_feature_products(self):
-    matrix1 = csr_matrix(np.asarray([[2,3],[4,5]]))
-    matrix2 = csr_matrix(np.asarray([[1,6],[3,2]]))
-    matrix3 = csr_matrix(np.asarray([[4,4],[5,2]]))
-    matrix4 = csr_matrix(np.asarray([[3,2],[8,-1]]))
+    matrix1 = sp.csr_matrix(np.asarray([[2,3],[4,5]]))
+    matrix2 = sp.csr_matrix(np.asarray([[1,6],[3,2]]))
+    matrix3 = sp.csr_matrix(np.asarray([[4,4],[5,2]]))
+    matrix4 = sp.csr_matrix(np.asarray([[3,2],[8,-1]]))
     components = [matrix1, matrix2, matrix3, matrix4]
     products = hoc_features.compute_feature_products(components,3)
 
